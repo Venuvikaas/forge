@@ -102,7 +102,7 @@ forge/
 - [ ] **[A]** Define `issues` Table per contract. — commit: `feat(pod): add issues table`
 - [ ] **[A]** Smoke: create a record + read it back. — commit: `test(pod): issues table round-trip`
 - [ ] **[A]** Write a Markdown File + `files.search("HYBRID")` returns it. — commit: `feat(pod): verify hybrid file search`
-- [ ] **[A]** `github_fetch` Function: pull open issues from a public repo via PAT. — commit: `feat(fn): github_fetch issues`
+- [x] **[A]** `github_fetch` Function: pull open issues from a public repo via PAT. — commit: `feat(fn): github_fetch issues` _(verified live: 15 open issues from cli/cli)_
 - [ ] **[A]** Map fetched issues → `issues` rows + write bodies to Files. — commit: `feat(ingest): github issues into table+files`
 
 ### Lane B — App skeleton (🟢 against mock data, no dependency on A)
