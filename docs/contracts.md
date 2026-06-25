@@ -27,7 +27,10 @@ telling the other person.
 
 - One file per issue: path `/issues/{id}.md`, content = `# {title}\n\n{body}`.
 - Product docs (optional) under `/knowledge/...`.
+- Write: `pod.files.write_text(path, content)` (the SDK has `write_text`, not `write`).
 - Search: `pod.files.search(query, scope_path="/issues", search_method="HYBRID")`.
+- Indexing is **async**: a file is only searchable once it reaches `COMPLETED`
+  status, so dedup-on-ingest must tolerate a brief delay (poll/retry).
 
 ## 3. Triage agent — output JSON (strict)
 
@@ -73,3 +76,15 @@ UI rule: render evidence as clickable links. **No confidence %** — show eviden
 
 ### Change log for this contract
 - 2026-06-25 — initial freeze (Phase 0).
+- 2026-06-26 — SDK reality check (Lane A, D1). Pinned `lemma-sdk==0.5.0`. Real
+  facts that differ from earlier assumptions, now reflected above + in
+  `.env.example`:
+  - Import is `from lemma_sdk import Pod` (not `from lemma import Pod`).
+  - Auth env vars are `LEMMA_TOKEN` + `LEMMA_POD_ID` (+ optional `LEMMA_BASE_URL`,
+    `LEMMA_ORG_ID`), **not** `LEMMA_POD_URL` / `LEMMA_API_KEY`. A `lemma auth login`
+    CLI session in `~/.lemma/config.json` also works.
+  - Files use `write_text`; search is async (see §2).
+  - Tables are created via `pod.tables.create(...)`; `id`, `created_at`,
+    `updated_at` are auto-materialized system columns. `issues` is created with
+    `enable_rls=False` (shared team table, not per-user).
+  - No field names changed — the `issues`/triage/investigation shapes are intact.

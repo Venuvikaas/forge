@@ -40,6 +40,16 @@ any wasted complexity?" score and the hiring track's "how they scoped and defend
 - **Why:** 35% problem-fit rewards a specific user; a working narrow loop beats five broken features.
 - **Rejected:** Bug graph, analytics dashboard, command palette, multi-repo, CI/Sentry, breaking-change diff analysis.
 
+### D-008 · Pin `lemma-sdk==0.5.0`; build against the introspected API
+- **Decision:** Use the real `lemma-sdk` (import root `lemma_sdk`), pinned at 0.5.0; verified every call by introspecting the installed package, not by trusting the PRD's assumed syntax.
+- **Why:** The PRD/contract had guessed env-var names (`LEMMA_POD_URL`/`LEMMA_API_KEY`) and a `files.write` that don't exist; building on guesses would fail at the live checkpoint. Ground-truth introspection is cheap insurance for the 15% SDK-utilisation score.
+- **Rejected:** Coding against the PRD pseudocode as-is. Reason: wrong env vars, wrong file API, would silently break Day-1 integration.
+
+### D-009 · `github_fetch` as a plain Python connector (not a deployed Lemma Function yet)
+- **Decision:** Day 1 `github_fetch` is an importable Python module using `requests`; defer wrapping it as a deployed Lemma Function unless a workflow needs it server-side.
+- **Why:** The connector logic is the work; it's testable without a pod and unblocks ingest immediately. GitHub is the one non-Surface source, so this is the only connector we own.
+- **Rejected:** Standing up a deployed Lemma Function on Day 1. Reason: deployment overhead with no demo value yet.
+
 ---
 
 ## Scope & kill criteria (Phase 0 agreement)
