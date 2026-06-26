@@ -150,7 +150,7 @@ forge/
 - [x] **[B]** Filter by priority / source. — commit: `feat(app): queue filters` _(queue has priority and source selects plus a clear action; filters apply before critical-first sorting and persist when returning from detail view. Inline script parse check PASS.)_
 - [x] **[B]** Start `docs/demo-script.md` (storyboard from PRD §7). — commit: `docs: draft demo script` _(expanded PRD §7 storyboard into a D3 rehearsal script with screen actions, voiceover, demo anchors, fallback notes, and timing.)_
 
-- [ ] 🔁 **[A+B] CHECKPOINT (EOD D3):** open a critical bug → see real "3 related"; first dry-run of demo steps 1–3. — commit: `test: dedup visible in app`
+- [x] 🔁 **[A+B] CHECKPOINT (EOD D3):** open a critical bug → see real "3 related"; first dry-run of demo steps 1–3. — commit: `test: dedup visible in app` _(`scripts/smoke_app_dedup.py` = APP-DEDUP SMOKE PASS: both critical bugs (gh_142, gh_158) carry real, resolvable, cross-source, symmetric related links; demo anchors hold. App renders the badge (`relatedCount`) + clickable related panel (`findIssue`→`selectIssue`) from `related_ids`. Dry-ran demo steps 1–3 on live data — all back. **Note:** dataset yields 1:1 cross-source pairs → real "1 related", not the script's illustrative "3 related"; add a 3-source cluster during D5 demo-dataset curation.)_
 
 ---
 
