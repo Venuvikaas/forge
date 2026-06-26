@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Forge — Priority Queue</title>
+  <style>
+    /* ---- Design tokens (one tone: focused engineering-ops console) ---- */
+    :root {
+      --bg:        #0e1116;
+      --surface-1: #151a21;
+      --surface-2: #1b2129;
+      --border:    #262d38;
+      --border-strong: #3a434f;
+      --text:      #e6eaf0;
+      --text-2:    #aab3c0;
+      --text-mute: #6b7787;
+      --accent:    #6ea8fe;
+      --accent-hover: #8bbcff;
+      /* status / priority colors */
+      --critical:  #ff6b6b;
+      --high:      #ffa94d;
+      --normal:    #4dabf7;
+      --low:       #868e96;
+      --ok:        #51cf66;
+      --space-1: 4px;  --space-2: 8px;  --space-3: 12px;
+      --space-4: 16px; --space-6: 24px; --space-8: 32px;
+      --radius: 10px;
+      --mono: ui-monospace, "SF Mono", "Cascadia Mono", "JetBrains Mono", Consolas, monospace;
+      --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--sans);
+      font-size: 14px;
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+    }
+    /* ---- App shell ---- */
+    .app { max-width: 920px; margin: 0 auto; padding: var(--space-6) var(--space-4) var(--space-8); }
+    header.bar {
+      display: flex; align-items: center; gap: var(--space-3);
+      padding-bottom: var(--space-4);
+      border-bottom: 1px solid var(--border);
+      margin-bottom: var(--space-6);
+    }
+    .logo {
+      font-weight: 700; letter-spacing: -0.01em; font-size: 18px;
+      display: flex; align-items: center; gap: var(--space-2);
+    }
+    .logo .spark { color: var(--accent); }
+    .logo .sub { color: var(--text-mute); font-weight: 500; font-size: 13px; }
+    .grow { flex: 1; }
+    /* connection / data-source pill */
+    .pill {
+      font-family: var(--mono); font-size: 11px; letter-spacing: 0.02em;
+      padding: 3px 9px; border-radius: 999px;
+      border: 1px solid var(--border-strong); color: var(--text-2);
+      display: inline-flex; align-items: center; gap: 6px; white-space: nowrap;
+    }
+    .pill .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--text-mute); }
+    .pill.live .dot { background: var(--ok); }
+    .pill.mock .dot { background: var(--high); }
+
+    main { min-height: 200px; }
+    .placeholder {
+      color: var(--text-mute); text-align: center; padding: var(--space-8) 0;
+      font-size: 13px;
+    }
+    footer { margin-top: var(--space-8); color: var(--text-mute); font-size: 12px; text-align: center; }
+    footer code { font-family: var(--mono); color: var(--text-2); }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="bar">
+      <span class="logo"><span class="spark">◆</span> Forge <span class="sub">/ Priority Queue</span></span>
+      <span class="grow"></span>
+      <span id="source-pill" class="pill"><span class="dot"></span><span id="source-label">connecting…</span></span>
+    </header>
+
+    <main id="main">
+      <div class="placeholder">Loading…</div>
+    </main>
+
+    <footer>
+      AI bug-triage operator console · built on the <code>Lemma SDK</code>
+    </footer>
+  </div>
+
+  <script>
+    /* ----------------------------------------------------------------
+       Lemma SDK boot.
+       The pod host injects window.__LEMMA_CONFIG__ (podId, apiUrl, authUrl)
+       at serve time and the SDK is loaded from cfg.apiUrl. When the page is
+       served standalone for local development (Day 1, mock data), neither is
+       present — we degrade to "mock" mode and read seed/issues.json so the
+       queue still renders. The data seam lives in DataSource.listIssues().
+    ---------------------------------------------------------------- */
+    const DataSource = {
+      mode: "mock",          // "live" once connected to the pod, else "mock"
+      client: null,
+      user: null,
+      async init() {
+        const cfg = window.__LEMMA_CONFIG__;
+        if (cfg && window.LemmaClient) {
+          try {
+            this.client = new window.LemmaClient.LemmaClient();
+            const state = await this.client.initialize();   // { status, user }
+            if (state && state.status === "authenticated") {
+              this.mode = "live";
+              this.user = state.user || null;
+            }
+          } catch (err) {
+            console.warn("Lemma init failed, falling back to mock data:", err);
+          }
+        }
+        return this.mode;
+      },
+    };
+
+    function renderSourcePill() {
+      const pill = document.getElementById("source-pill");
+      const label = document.getElementById("source-label");
+      pill.classList.remove("live", "mock");
+      if (DataSource.mode === "live") {
+        pill.classList.add("live");
+        label.textContent = "live pod";
+      } else {
+        pill.classList.add("mock");
+        label.textContent = "mock data";
+      }
+    }
+
+    async function boot() {
+      await DataSource.init();
+      renderSourcePill();
+      // Box 1 milestone: the app shell serves and reports its data source.
+      // The queue itself (cards, sort, states) is wired up in later boxes.
+      document.getElementById("main").innerHTML =
+        '<div class="placeholder">Priority queue — coming next.</div>';
+    }
+
+    // Load the SDK from the injected API origin, then boot. If there is no
+    // injected config (local/static serving), boot straight into mock mode.
+    (function () {
+      const cfg = window.__LEMMA_CONFIG__;
+      if (!cfg || !cfg.apiUrl) { boot(); return; }
+      const base = cfg.apiUrl.replace(/\/$/, "");
+      const s = document.createElement("script");
+      s.src = base + "/public/sdk/lemma-client.js";
+      s.onload = boot;
+      s.onerror = boot;   // SDK unavailable → mock mode, still serves
+      document.head.appendChild(s);
+    })();
+  </script>
+</body>
+</html>
