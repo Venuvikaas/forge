@@ -95,7 +95,7 @@ forge/
 
 ---
 
-## ☐ DAY 1 — June 25 PM · Spine (🟢 PARALLEL after Phase 0)
+## ✅ DAY 1 — June 25 PM · Spine (🟢 PARALLEL after Phase 0) — DONE
 
 ### Lane A — Lemma pod + ingestion
 - [x] **[A]** Install Lemma SDK, `Pod.from_env()` connects. — commit: `feat(pod): bootstrap pod connection` _(live: pod `forge` 019f01ec…)_
@@ -112,7 +112,7 @@ forge/
 - [x] **[B]** Critical-first sort + priority color coding. — commit: `feat(app): sort and color by priority` _(sortCriticalFirst: critical→high→normal→low→untriaged, updated-desc tiebreak; per-priority badge tint + colored left rail on each card)_
 - [x] **[B]** Empty/loading states. — commit: `feat(app): queue loading and empty states` _(shimmer skeleton rows while loading (aria-busy, reduced-motion safe); "Queue is clear" empty state; actionable error state with Retry → boot())_
 
-- [ ] 🔁 **[A+B] CHECKPOINT (EOD D1):** point B's queue at A's real Table; run smoke. — commit: `feat(app): read issues from live table`
+- [x] 🔁 **[A+B] CHECKPOINT (EOD D1):** point B's queue at A's real Table; run smoke. — commit: `feat(app): read issues from live table` _(app deployed to pod → live at https://forge.apps.lemma.work; reads the live `issues` Table (16 real rows) via injected `__LEMMA_CONFIG__`; smoke PASS — connection / record round-trip / HYBRID search; all 16 rows expose every app-rendered field)_
 
 ---
 

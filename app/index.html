@@ -217,7 +217,14 @@
       async listIssues() {
         if (this.mode === "live") {
           const res = await this.client.records.list("issues", { limit: 100 });
-          return res.items || res;
+          const items = (res && res.items) || res || [];
+          // Records come back as flat row objects (contract §1 fields at top
+          // level). Unwrap defensively in case a row is delivered as {payload}.
+          return items.map(function (r) {
+            return r && r.payload && r.title === undefined
+              ? Object.assign({ id: r.id }, r.payload)
+              : r;
+          });
         }
         const res = await fetch("../seed/issues.json", { cache: "no-store" });
         if (!res.ok) throw new Error("could not load seed/issues.json (" + res.status + ")");

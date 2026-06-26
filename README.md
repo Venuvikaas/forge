@@ -73,6 +73,10 @@ After step 4 the `issues` Table holds real issues, each with its body at `/issue
 The App / seed lane reads and writes the **same `issues` Table** Dev A's pod owns —
 the contract in [`docs/contracts.md`](docs/contracts.md) is the seam, and it is current.
 
+- **App (live):** the operator UI is deployed at **https://forge.apps.lemma.work**
+  (single-file HTML Lemma App, pod-authenticated). Redeploy after edits with
+  `lemma apps deploy forge ./app/index.html --yes`. Served standalone it falls back
+  to `seed/issues.json` (mock mode); on the pod it reads the live `issues` Table.
 - **Pod:** `forge` · id `019f01ec-5992-732f-b395-a2b29fc87254` (org *Knight's Workspace*).
 - **Auth:** `lemma auth login` (your own account; ask Dev A to add you to the pod), then
   set `LEMMA_POD_ID` in `.env` as above. Token is read from the CLI session — no key in code.
