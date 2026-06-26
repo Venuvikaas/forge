@@ -132,7 +132,7 @@ forge/
 - [x] **[B]** Issue Detail view: title, body, source, priority, repro steps. — commit: `feat(app): issue detail view` _(queue cards open an in-app detail screen with title, report body, source/id/priority metadata, repro steps, and a back-to-queue control; script parse check PASS.)_
 - [x] **[B]** Source badges (GitHub / Slack / Email). — commit: `feat(app): source badges` _(queue + detail render source-specific `GitHub`, `Slack`, and `Email` badges with distinct compact styling; inline script parse check PASS.)_
 
-- [ ] 🔁 **[A+B] CHECKPOINT (EOD D2):** real triaged data (incl. seeded) shows priority+repro in detail view; smoke passes. — commit: `test: triage end-to-end smoke`
+- [x] 🔁 **[A+B] CHECKPOINT (EOD D2):** real triaged data (incl. seeded) shows priority+repro in detail view; smoke passes. — commit: `test: triage end-to-end smoke` _(all 24 live issues now triaged across github/slack/email (incl. the 8 seeded Slack/email rows); `scripts/smoke_triage.py` = SMOKE PASS: coverage (all triaged rows have valid priority enum + non-empty repro, all 3 sources present) + live loop (creates a throwaway crash issue → real triage agent → `critical` + repro written back → cleaned up). Detail view (`app/index.html`) renders `issue.priority` + `issue.repro_steps` from the live table (reads verified at D1 checkpoint).)_
 
 ---
 
