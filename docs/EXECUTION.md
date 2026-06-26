@@ -177,6 +177,16 @@ forge/
 
 ## ☐ DAY 5 — June 29 · Flourish OR harden (🟢 PARALLEL)
 
+### 🌟 HERO — make the investigation verifiable (do this FIRST, before Release Center)
+> The wow is "it read the actual code and it was right, and you can check." One bug, one verifiable
+> line-level citation, one concrete diff. This finishes the D4 investigation properly — depth, not breadth.
+- [ ] **[A]** `fetch_source_evidence` Function: ground the symbol from `analyze_stacktrace` in a **real** GitHub code search (`/search/code?q=<symbol>+repo:cli/cli`), fetch the file, return the matched lines + a real `blob/<sha>/…#Lstart-Lend` URL. If the symbol isn't found, return empty — **never fabricate** a file/line. — commit: `feat(fn): fetch_source_evidence`
+- [ ] **[A]** Wire `fetch_source_evidence` as a FUNCTION node into the `investigate` workflow; pass its evidence to `investigate_synth`. — commit: `feat(wf): source evidence in investigate`
+- [ ] **[A]** `investigate_synth`: when real source lines are present, emit a concrete proposed fix as a small unified diff **anchored to the fetched lines** (no invented context, cite the real file/line). — commit: `feat(agent): propose-fix diff`
+- [ ] **[B]** Evidence card: render the code citation (file path + line range, clickable to the real cli/cli line) and the proposed-fix diff block. — commit: `feat(app): code citation + fix diff`
+- [ ] **[B]** Curate **one** cross-source dup pair with genuinely divergent language (e.g. GitHub "401 after SSO session expiry" ↔ Slack "gh commands randomly stop working in the afternoon, have to re-login") so the match reads as semantic, not keyword. — commit: `feat(seed): divergent-language dup pair`
+- [ ] 🔁 **[A+B]** Dry-run the wow on camera: open the bug → Investigate → click the cited line → land on real cli/cli source → show the diff. **Record a backup take.** — commit: `test: verifiable investigation`
+
 ### If Release Center is GO
 - [ ] **[A]** `github_fetch` extended: merged PRs since last tag. — commit: `feat(fn): fetch merged PRs`
 - [ ] **[A]** `release_notes` agent: group PRs (Added/Fixed/Changed) + draft. — commit: `feat(agent): release notes drafting`
