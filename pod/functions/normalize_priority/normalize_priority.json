@@ -1,0 +1,20 @@
+{
+  // D2 Lane A — the validate-then-write step for triage. Takes the triage
+  // agent's raw JSON verdict, coerces priority to the contract enum (unknown
+  // /missing -> "normal"), and writes priority + repro_steps + status:'triaged'
+  // back to the issues row. The agent only judges; this function is the one
+  // that touches the table, so it holds the only write grant.
+  "name": "normalize_priority",
+  "description": "Validate a triage verdict: coerce priority to the issues enum (default 'normal'), then write priority + repro_steps + status='triaged' back to the issue row.",
+  "type": "API",
+  "code": { "$file": "code.py" },
+  "permissions": {
+    "grants": [
+      {
+        "resource_type": "datastore_table",
+        "resource_name": "issues",
+        "permission_ids": ["datastore.table.read", "datastore.record.read", "datastore.record.write"]
+      }
+    ]
+  }
+}

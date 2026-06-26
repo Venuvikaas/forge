@@ -121,7 +121,7 @@ forge/
 ### Lane A — Triage agent
 - [x] **[A]** Define `triage` agent (role, scoped to `issues` + Files). — commit: `feat(agent): triage agent definition` _(bundle `pod/agents/triage`: POD toolset, read-only grants `issues:read` + `/issues:read`, strict `output_schema` {priority,repro_steps,reason} per contract §3; dry-run import OK. D-011 records the bundle-authoring decision.)_
 - [x] **[A]** Prompt: output strict JSON `{priority, repro_steps}`. — commit: `feat(agent): triage classify + repro prompt` _(instruction.md: priority rubric (critical/high/normal/low, default normal when unclear), repro-steps rules (reporter's steps or explicit "no repro" bullet, no fabrication), evidence-based reason, no fake %. Imported + live-tested on a sample crash → correct `critical` verdict, schema-conformant JSON via `final_result` tool.)_
-- [ ] **[A]** `normalize_priority` Function: validate JSON → enum, default Normal. — commit: `feat(fn): normalize_priority validator`
+- [x] **[A]** `normalize_priority` Function: validate JSON → enum, default Normal. — commit: `feat(fn): normalize_priority validator` _(API fn `pod/functions/normalize_priority`, granted issues:read,write — the single triage writer. Coerces priority to the contract enum (unknown/missing → normal), writes priority + repro_steps + status='triaged' back. Verified live: `high` kept (coerced=no), `P0-urgent`→`normal` (coerced=yes); both rows persisted triaged.)_
 - [ ] **[A]** Run triage over a conversation; write results back to row. — commit: `feat(agent): triage write-back to issues`
 - [ ] **[A]** Batch: triage all newly-ingested issues. — commit: `feat(ingest): batch triage on ingest`
 - [ ] **[A]** Log raw agent output to a file for debugging. — commit: `chore(agent): log triage outputs`
