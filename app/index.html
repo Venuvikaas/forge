@@ -98,7 +98,7 @@
       text-transform: uppercase; padding: 2px 7px; border-radius: 5px;
       border: 1px solid var(--border-strong); color: var(--text-2);
     }
-    /* priority badge — neutral here; color coding added in Box 4 */
+    /* priority badge + color coding */
     .badge {
       flex-shrink: 0;
       font-family: var(--mono); font-size: 10px; font-weight: 700;
@@ -107,6 +107,19 @@
       border: 1px solid var(--border-strong); color: var(--text-2);
       white-space: nowrap;
     }
+    /* color per priority — badge tint + matching left rail on the card */
+    .badge.p-critical { color: var(--critical); border-color: var(--critical); background: rgba(255,107,107,0.10); }
+    .badge.p-high     { color: var(--high);     border-color: var(--high);     background: rgba(255,169,77,0.10); }
+    .badge.p-normal   { color: var(--normal);   border-color: var(--normal);   background: rgba(77,171,247,0.10); }
+    .badge.p-low      { color: var(--low);      border-color: var(--low);      background: rgba(134,142,150,0.10); }
+    .badge.p-untriaged{ color: var(--text-mute); border-style: dashed; }
+
+    .card { border-left-width: 3px; border-left-color: var(--border); }
+    .card.p-critical { border-left-color: var(--critical); }
+    .card.p-high     { border-left-color: var(--high); }
+    .card.p-normal   { border-left-color: var(--normal); }
+    .card.p-low      { border-left-color: var(--low); }
+    .card.p-untriaged{ border-left-color: var(--border-strong); }
     footer { margin-top: var(--space-8); color: var(--text-mute); font-size: 12px; text-align: center; }
     footer code { font-family: var(--mono); color: var(--text-2); }
   </style>
@@ -177,10 +190,24 @@
       });
     }
 
+    // Critical-first ordering. Lower rank = higher up the queue; untriaged sinks
+    // to the bottom. Ties broken by most-recently-updated.
+    const PRIORITY_RANK = { critical: 0, high: 1, normal: 2, low: 3 };
+    function priorityRank(p) {
+      return p && p in PRIORITY_RANK ? PRIORITY_RANK[p] : 99;
+    }
+    function sortCriticalFirst(issues) {
+      return issues.slice().sort(function (a, b) {
+        const r = priorityRank(a.priority) - priorityRank(b.priority);
+        if (r !== 0) return r;
+        return String(b.updated_at || "").localeCompare(String(a.updated_at || ""));
+      });
+    }
+
     function issueCard(issue) {
-      const priorityLabel = issue.priority ? issue.priority : "untriaged";
+      const key = issue.priority || "untriaged";
       return (
-        '<article class="card" data-id="' + escapeHtml(issue.id) + '">' +
+        '<article class="card p-' + key + '" data-id="' + escapeHtml(issue.id) + '">' +
           '<div class="body">' +
             '<h3 class="title">' + escapeHtml(issue.title) + "</h3>" +
             '<div class="meta">' +
@@ -188,15 +215,16 @@
               '<span class="source">' + escapeHtml(issue.source) + "</span>" +
             "</div>" +
           "</div>" +
-          '<span class="badge">' + escapeHtml(priorityLabel) + "</span>" +
+          '<span class="badge p-' + key + '">' + escapeHtml(key) + "</span>" +
         "</article>"
       );
     }
 
     function renderQueue(issues) {
+      const ordered = sortCriticalFirst(issues);
       const main = document.getElementById("main");
       main.innerHTML =
-        '<div class="queue">' + issues.map(issueCard).join("") + "</div>";
+        '<div class="queue">' + ordered.map(issueCard).join("") + "</div>";
     }
 
     function renderSourcePill() {
