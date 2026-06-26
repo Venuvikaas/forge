@@ -301,8 +301,8 @@
       border-radius: 999px; padding: 2px 8px; margin-left: 8px; vertical-align: middle;
     }
     .fix-card {
-      border: 1px solid var(--edge); border-radius: var(--r);
-      background: var(--panel-2); overflow: hidden;
+      border: 1px solid var(--edge); border-left: 2px solid rgba(63,185,80,0.55);
+      border-radius: var(--r); background: var(--panel-2); overflow: hidden;
     }
     .code-citation {
       display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
@@ -1018,20 +1018,29 @@
       renderDetail(issue);
       try {
         const run = await DataSource.triggerInvestigation(issue);
-        // A run carries its own hypothesis/evidence (live result, backup take, or
-        // sample). Complete when we have a hypothesis to show; otherwise the live
-        // workflow is still running and the progress steps stay visible.
-        const hasResult = run && run.hypothesis;
-        AppState.investigations[issueId] = Object.assign(AppState.investigations[issueId], run, {
-          phase: hasResult ? "synthesis" : "evidence",
-          status: hasResult ? "complete" : "running",
-          hypothesis: (run && run.hypothesis) || "",
-          evidence: (run && run.evidence) || [],
-        });
+        // triggerInvestigation only resolves after the live attempt settles (and
+        // falls back to the backup take). A hypothesis => show it. No hypothesis =>
+        // the workflow failed/was too slow AND no backup exists: surface a clean,
+        // retryable "unavailable" state with whatever evidence we did gather — never
+        // an infinite spinner, never a crash.
+        if (run && run.hypothesis) {
+          AppState.investigations[issueId] = Object.assign({}, AppState.investigations[issueId], run, {
+            phase: "synthesis",
+            status: "complete",
+            hypothesis: run.hypothesis,
+            evidence: (run && run.evidence) || [],
+          });
+        } else {
+          AppState.investigations[issueId] = {
+            status: "error",
+            message: "The investigation didn't return a hypothesis — the workflow may be slow or temporarily unavailable. Any evidence gathered is shown below; press Investigate to try again.",
+            evidence: (run && run.evidence) || [],
+          };
+        }
       } catch (err) {
         AppState.investigations[issueId] = {
           status: "error",
-          message: (err && err.message) || "Investigation could not start.",
+          message: (err && err.message) || "Investigation could not start. Press Investigate to try again.",
         };
       }
       renderDetail(issue);
