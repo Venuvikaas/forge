@@ -55,6 +55,11 @@ any wasted complexity?" score and the hiring track's "how they scoped and defend
 - **Why:** The whole product is one operator console (queue → detail → investigate); HTML deploys with zero build and dodges the Windows/patched-CLI Vite build+deploy risk. The mock/live seam lets Lane B build full-speed against seed data with no dependency on Lane A — exactly the Day-1 parallelism the plan calls for.
 - **Rejected:** Vite + React scaffold. Reason: routing/bundler overhead for a single-surface app, plus a heavier deploy path on Windows; revisit only if the UI genuinely needs client-side routing/state later.
 
+### D-011 · D2+ agents/functions are bundle-authored (not SDK-scripted)
+- **Decision:** Author the triage agent + `normalize_priority` function (and later the investigate workflow) as a **local pod bundle** (`pod/pod.json` + `pod/agents/*`, `pod/functions/*`) imported with `lemma pods import`, per the `lemma-builder` skill. The agent is a **read-only classifier** (POD toolset, granted `issues:read` + `/issues:read`, `output_schema` = `{priority, repro_steps, reason}`); `normalize_priority` is the validate-and-write step (coerce priority→enum, default `normal`, write back `status:'triaged'`); a Python SDK driver in `ingest/` orchestrates run→normalize→log over untriaged rows.
+- **Why:** Agents are pod-resident config (instruction + toolsets + name-based grants), not Python objects — bundles make them versioned, diffable, and re-importable, and the skill is the authoritative guide. Keeping the agent read-only and pushing the write into a granted function keeps the LLM out of the data-integrity path (the 15% SDK-utilisation + 25% product-judgment scores reward this separation). D1's direct-SDK scripts stay for table/ingest plumbing — bundles are additive, not a rewrite.
+- **Rejected:** Instantiating/agentic writes from a raw SDK script (no versioned agent resource, no grant boundary), and letting the agent write priorities directly (puts an LLM on the integrity path with no enum validation). The pod shell already exists, so `import` only upserts the new resources.
+
 ---
 
 ## Scope & kill criteria (Phase 0 agreement)

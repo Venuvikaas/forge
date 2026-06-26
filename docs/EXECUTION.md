@@ -119,7 +119,7 @@ forge/
 ## ☐ DAY 2 — June 26 · Triage works (🟢 PARALLEL)
 
 ### Lane A — Triage agent
-- [ ] **[A]** Define `triage` agent (role, scoped to `issues` + Files). — commit: `feat(agent): triage agent definition`
+- [x] **[A]** Define `triage` agent (role, scoped to `issues` + Files). — commit: `feat(agent): triage agent definition` _(bundle `pod/agents/triage`: POD toolset, read-only grants `issues:read` + `/issues:read`, strict `output_schema` {priority,repro_steps,reason} per contract §3; dry-run import OK. D-011 records the bundle-authoring decision.)_
 - [ ] **[A]** Prompt: output strict JSON `{priority, repro_steps}`. — commit: `feat(agent): triage classify + repro prompt`
 - [ ] **[A]** `normalize_priority` Function: validate JSON → enum, default Normal. — commit: `feat(fn): normalize_priority validator`
 - [ ] **[A]** Run triage over a conversation; write results back to row. — commit: `feat(agent): triage write-back to issues`

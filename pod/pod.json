@@ -1,0 +1,5 @@
+{
+  "name": "forge",
+  "description": "Forge — the founding engineer's feedback-triage operating loop: ingest GitHub/Slack/email issues, AI-triage by priority + repro, dedup, and investigate root causes.",
+  "format_version": 1
+}

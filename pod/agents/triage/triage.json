@@ -1,0 +1,43 @@
+{
+  // D2 Lane A — the triage classifier. Read-only: it JUDGES priority + repro
+  // steps and returns strict JSON (output_schema below); the normalize_priority
+  // function is what validates + writes the result back to the issues row.
+  // Grants are scoped to exactly what it reads (docs/contracts.md §3).
+  "name": "triage",
+  "description": "Classifies a feedback issue by priority and drafts reproduction steps. Read-only judgment — returns strict JSON {priority, repro_steps, reason}; never writes.",
+  "instruction": { "$file": "instruction.md" },
+  "toolsets": ["POD"],
+  "output_schema": {
+    "type": "object",
+    "properties": {
+      "priority": {
+        "type": "string",
+        "enum": ["critical", "high", "normal", "low"],
+        "description": "Severity for the founding-engineer queue."
+      },
+      "repro_steps": {
+        "type": "string",
+        "description": "Markdown bullet list of reproduction steps; '- unknown' if the report gives none."
+      },
+      "reason": {
+        "type": "string",
+        "description": "One short evidence-based sentence. No fabricated percentages."
+      }
+    },
+    "required": ["priority", "repro_steps", "reason"]
+  },
+  "permissions": {
+    "grants": [
+      {
+        "resource_type": "datastore_table",
+        "resource_name": "issues",
+        "permission_ids": ["datastore.table.read", "datastore.record.read"]
+      },
+      {
+        "resource_type": "folder",
+        "resource_name": "/issues",
+        "permission_ids": ["folder.read"]
+      }
+    ]
+  }
+}
