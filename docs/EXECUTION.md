@@ -127,7 +127,7 @@ forge/
 - [x] **[A]** Log raw agent output to a file for debugging. — commit: `chore(agent): log triage outputs` _(each run writes `logs/triage/<issue_id>.json` (gitignored): prompt + parsed verdict + conversation_id + full message transcript incl. THINKING/final_result. Logging is best-effort — a log failure never breaks triage. Verified on gh_13571.)_
 
 ### Lane B — Ingestion glue + detail view
-- [ ] **[B]** `seed/slack.json` + `seed/email.json` fixtures. — commit: `feat(seed): slack and email fixtures`
+- [x] **[B]** `seed/slack.json` + `seed/email.json` fixtures. — commit: `feat(seed): slack and email fixtures` _(4 Slack + 4 email rows, exact `issues` contract shape, includes duplicate links to GitHub issues and untriaged examples for loader/triage.)_
 - [ ] **[B]** Seed loader writes Slack/email into the `issues` Table (same shape). — commit: `feat(ingest): load seed feedback into table`
 - [ ] **[B]** Issue Detail view: title, body, source, priority, repro steps. — commit: `feat(app): issue detail view`
 - [ ] **[B]** Source badges (GitHub / Slack / Email). — commit: `feat(app): source badges`

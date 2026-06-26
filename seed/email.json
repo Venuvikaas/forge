@@ -1,0 +1,58 @@
+[
+  {
+    "id": "iss_007",
+    "source": "email",
+    "external_id": null,
+    "title": "Getting 401 errors after being logged in for a few hours",
+    "body": "Forwarded from support@: \"I log in fine in the morning but by mid-afternoon every command fails with a 401 / bad credentials error. Logging in again fixes it for a while. We use Okta SSO. Is this expected?\"",
+    "priority": "high",
+    "repro_steps": "- Authenticate in the morning via Okta SSO\n- Use the CLI normally\n- A few hours later commands fail with 401 until re-login",
+    "status": "triaged",
+    "related_ids": ["gh_158"],
+    "linked_prs": [],
+    "created_at": "2026-06-21T17:22:00Z",
+    "updated_at": "2026-06-24T12:33:00Z"
+  },
+  {
+    "id": "iss_018",
+    "source": "email",
+    "external_id": null,
+    "title": "Can the CLI show CI status inline on `gh pr list`?",
+    "body": "Forwarded from a customer: \"Would love a checkmark / x for CI status right in `gh pr list` so I don't have to open each PR to see if checks passed. Big quality-of-life win for our review rotation.\"",
+    "priority": "low",
+    "repro_steps": null,
+    "status": "new",
+    "related_ids": [],
+    "linked_prs": [],
+    "created_at": "2026-06-23T22:00:00Z",
+    "updated_at": "2026-06-23T22:00:00Z"
+  },
+  {
+    "id": "iss_022",
+    "source": "email",
+    "external_id": null,
+    "title": "Release upload reports success but asset is missing",
+    "body": "Forwarded from enterprise-support@: \"Our release automation uploads a `.zip` with `gh release upload`. The command exits successfully, but the artifact is not visible in the release page when an older asset has the same filename.\"",
+    "priority": null,
+    "repro_steps": null,
+    "status": "new",
+    "related_ids": ["gh_209"],
+    "linked_prs": [],
+    "created_at": "2026-06-24T17:35:00Z",
+    "updated_at": "2026-06-24T17:35:00Z"
+  },
+  {
+    "id": "iss_023",
+    "source": "email",
+    "external_id": null,
+    "title": "Windows users see scrambled accented characters",
+    "body": "Forwarded from localization@: \"Several Windows users reported that issue titles with accents render as garbage in `gh issue list`. The same repository looks fine in PowerShell when using plain `git log`.\"",
+    "priority": "normal",
+    "repro_steps": "- Open Windows Terminal\n- List issues containing accented or CJK characters with `gh issue list`\n- Titles render as garbled bytes",
+    "status": "triaged",
+    "related_ids": ["gh_192"],
+    "linked_prs": [],
+    "created_at": "2026-06-24T18:10:00Z",
+    "updated_at": "2026-06-24T18:25:00Z"
+  }
+]

@@ -1,0 +1,58 @@
+[
+  {
+    "id": "iss_003",
+    "source": "slack",
+    "external_id": null,
+    "title": "gh pr create just crashes if origin isn't set up right",
+    "body": "from #eng-help: \"hey is anyone else seeing `gh pr create` straight up crash? i cloned my fork and it dies with some go panic about a nil pointer. no upstream remote on my side. had to set the base manually.\"",
+    "priority": "high",
+    "repro_steps": "- Clone a fork without an upstream remote\n- Run `gh pr create`\n- Crash instead of a guided prompt",
+    "status": "triaged",
+    "related_ids": ["gh_142"],
+    "linked_prs": [],
+    "created_at": "2026-06-23T15:40:00Z",
+    "updated_at": "2026-06-24T11:05:00Z"
+  },
+  {
+    "id": "iss_011",
+    "source": "slack",
+    "external_id": null,
+    "title": "clone freezes forever on the corp proxy",
+    "body": "from #it-support: \"anyone got `gh repo clone` working on the VPN/proxy? mine just freezes, no error, no progress bar, nothing. regular git clone is fine. have to ctrl-c eventually.\"",
+    "priority": "normal",
+    "repro_steps": "- On corporate VPN/proxy\n- `gh repo clone` a moderately large repo\n- Hangs with no feedback",
+    "status": "triaged",
+    "related_ids": ["gh_171"],
+    "linked_prs": [],
+    "created_at": "2026-06-22T11:48:00Z",
+    "updated_at": "2026-06-24T10:14:00Z"
+  },
+  {
+    "id": "iss_015",
+    "source": "slack",
+    "external_id": null,
+    "title": "extension install from a private repo 404s",
+    "body": "from #cli-feedback: \"`gh extension install myorg/gh-private-ext` gives a 404 even though I can clone the repo fine. think it's not using my token for the extension lookup?\"",
+    "priority": null,
+    "repro_steps": null,
+    "status": "new",
+    "related_ids": [],
+    "linked_prs": [],
+    "created_at": "2026-06-24T14:12:00Z",
+    "updated_at": "2026-06-24T14:12:00Z"
+  },
+  {
+    "id": "iss_021",
+    "source": "slack",
+    "external_id": null,
+    "title": "api command drops response headers in debug output",
+    "body": "from #platform-ops: \"running `GH_DEBUG=api gh api /repos/acme/widgets/actions/runs` prints the request headers but not the response headers, which makes it hard to see rate-limit state during incidents.\"",
+    "priority": "normal",
+    "repro_steps": "- Set `GH_DEBUG=api`\n- Run `gh api` against an endpoint that returns rate-limit headers\n- Observe response headers are missing from debug output",
+    "status": "triaged",
+    "related_ids": ["gh_201"],
+    "linked_prs": [],
+    "created_at": "2026-06-24T16:05:00Z",
+    "updated_at": "2026-06-24T16:20:00Z"
+  }
+]
