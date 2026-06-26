@@ -201,7 +201,7 @@ forge/
 - [x] **[B]** Write `README.md` runbook (clone → run). — commit: `docs: add README runbook` _(summary + architecture updated to the verifiable-investigation hero (dropped the release-notes claim); added the full-loop run steps + the one-command `scripts/smoke.py` health check.)_
 - [x] **[A+B]** Fill in `DECISIONS.md` cut-list + rationale. — commit: `docs: complete decision log` _(added a 7-row **Cut list** — Release Center, own vector DB, authenticated code search, confidence %, multi-repo, live webhooks, per-user RLS — each with why + what-instead; resolved the open decisions.)_
 
-- [ ] 🔁 **[A+B] CHECKPOINT (EOD D5):** full loop stable; smoke PASS; **2 backup recordings exist.** — commit: `test: pre-submission smoke pass`
+- [x] 🔁 **[A+B] CHECKPOINT (EOD D5):** full loop stable; smoke PASS; **2 backup recordings exist.** — commit: `test: pre-submission smoke pass` _(**FULL-LOOP SMOKE PASS** — `scripts/smoke.py` green on all 5 stages in 391s: connection, triage (31 issues triaged, all priority+repro, 3 sources), dedup (5/5 strong pairs linked, weak pair + no-dups correctly clean), dedup-in-app (3-source SSO cluster → "2 related" on gh_158), investigate (gh_142 COMPLETED w/ proposed fix at create.go:L1023; gh_158 COMPLETED). Hardened the loop against the degraded backend: get_pod auto-refreshes the CLI token (a 401-on-expiry killed an earlier run) and the orchestrator retries a transient stage once. **Backup take (data):** seed/investigate_samples.json carries both anchors incl. gh_142's verified proposed_fix, embedded in the app. **Screen recordings (2 takes): still TODO on camera** — all underlying steps verified + deployed at forge.apps.lemma.work.)_
 
 ---
 
