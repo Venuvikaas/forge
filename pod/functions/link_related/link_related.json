@@ -1,0 +1,18 @@
+{
+  // D3 Lane A box 3 — write a confirmed duplicate link symmetrically. Appends
+  // each id to the other's related_ids (idempotent), so opening either issue
+  // shows the other under "related". The single writer for related_ids.
+  "name": "link_related",
+  "description": "Symmetrically link two issues as related/duplicate: append each id to the other's related_ids (idempotent). Returns the updated lists.",
+  "type": "API",
+  "code": { "$file": "code.py" },
+  "permissions": {
+    "grants": [
+      {
+        "resource_type": "datastore_table",
+        "resource_name": "issues",
+        "permission_ids": ["datastore.table.read", "datastore.record.read", "datastore.record.write"]
+      }
+    ]
+  }
+}

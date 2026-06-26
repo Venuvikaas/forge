@@ -141,7 +141,7 @@ forge/
 ### Lane A — Duplicate detection
 - [x] **[A]** On new issue, `files.search(text, "HYBRID")` top-5. — commit: `feat(pod): similarity search on ingest` _(API fn `pod/functions/find_similar`, granted `issues:read` + `/issues:read`: HYBRID `files.search` over `/issues`, maps chunk paths→ids, drops self, keeps each candidate's best chunk, returns ranked top-K {id,score,title}. Verified live: `find_similar(iss_003)` → top candidate `gh_142` (correct partner).)_
 - [x] **[A]** Single LLM YES/NO confirm step for the top hit. — commit: `feat(agent): duplicate confirmation` _(read-only agent `pod/agents/dedup_confirm`, output_schema `{is_duplicate, reason}` per contract §4; instruction errs toward `false` (a false link pollutes the queue). Verified live: iss_003↔gh_142 → YES; weak pair iss_021↔gh_201 (same `gh api` command, different bug) → NO.)_
-- [ ] **[A]** Write confirmed matches to `related_ids` on both rows. — commit: `feat(pod): link related issues`
+- [x] **[A]** Write confirmed matches to `related_ids` on both rows. — commit: `feat(pod): link related issues` _(API fn `pod/functions/link_related` (granted issues:read,write) appends each id to the other's `related_ids`, symmetric + idempotent (re-run `changed=no`). `ingest/dedup/run_dedup.py` ties it together: `find_similar` top hit → `dedup_confirm` → `link_related`. Verified live: iss_003↔gh_142 link + idempotency; driver `dedup_one(iss_007)` → confirmed + linked to gh_158.)_
 - [ ] **[A]** Verify against the known dup pairs in seed data. — commit: `test(pod): dedup catches seeded duplicates`
 
 ### Lane B — Queue polish
