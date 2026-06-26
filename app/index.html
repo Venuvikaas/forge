@@ -295,6 +295,38 @@
     .hypothesis-card p {
       margin: 0; color: var(--text); font-size: 14px; line-height: 1.65;
     }
+    .verified-pill {
+      font-family: var(--mono); font-size: 10px; letter-spacing: .08em; text-transform: uppercase;
+      color: var(--norm); border: 1px solid rgba(63,185,80,0.4); background: rgba(63,185,80,0.1);
+      border-radius: 999px; padding: 2px 8px; margin-left: 8px; vertical-align: middle;
+    }
+    .fix-card {
+      border: 1px solid var(--edge); border-radius: var(--r);
+      background: var(--panel-2); overflow: hidden;
+    }
+    .code-citation {
+      display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+      font-family: var(--mono); font-size: 12px;
+      padding: 10px 12px; color: var(--quench); text-decoration: none;
+      border-bottom: 1px solid var(--edge); background: rgba(255,157,46,0.06);
+    }
+    .code-citation:hover, .code-citation:focus-visible { text-decoration: underline; outline: none; }
+    .code-citation .cite-hint {
+      margin-left: auto; color: var(--mute); font-size: 10px;
+      letter-spacing: .08em; text-transform: uppercase;
+    }
+    .diff {
+      margin: 0; padding: 10px 0; overflow-x: auto;
+      font-family: var(--mono); font-size: 12px; line-height: 1.55; background: var(--panel);
+    }
+    .diff .dl { display: block; padding: 0 12px; white-space: pre; }
+    .diff .dl.add { background: rgba(63,185,80,0.14); color: var(--norm); }
+    .diff .dl.del { background: rgba(248,81,73,0.14); color: #ff9b8f; }
+    .diff .dl.meta { color: var(--mute); }
+    .fix-rationale {
+      margin: 0; padding: 10px 12px; border-top: 1px solid var(--edge);
+      color: var(--text-2); font-size: 13px; line-height: 1.6;
+    }
     .detail {
       position: relative; overflow: hidden;
       background: var(--panel); border: 1px solid var(--edge);
@@ -480,13 +512,22 @@
     // backend is too slow on the day (EXECUTION.md D4 box 6 documents the latency).
     const INVESTIGATE_SAMPLES = {
       gh_142: {
-        hypothesis: "The crash originates in `determineBaseRepo` inside `github.com/cli/cli/v2/pkg/cmd/pr/create`: when the local git config has no `upstream` remote (e.g., a freshly cloned fork with only `origin`), the function appears to dereference a nil remote reference — likely an upstream URL or the upstream config entry it tries to read when picking a base branch — rather than first checking that the upstream remote exists. Repro confirms the trigger: clone a fork, omit the `upstream` remote, run `gh pr create`, and `determineBaseRepo` panics on a nil pointer instead of surfacing a user-facing error asking the user to configure an upstream. The matched Slack report (iss_003) is the same root cause from another reporter, and none of the supplied commit candidates touch this code path, so evidence is limited to the two reports and the stack frame in the signature.",
+        hypothesis: "The crash originates in `getRemotes` at `pkg/cmd/pr/create/create.go:1023`: when `gh pr create` is run in a freshly cloned fork with no `upstream` remote configured (and no `--repo` override), `opts.Remotes()` either returns an error that the function swallows because it is not unconditionally re-thrown, or returns a nil/empty `remotes` value with `err == nil`. In both paths the function returns `(remotes, nil)` — a nil/empty slice with no error — so the caller (the `Browser`/`BaseRef` resolution that asks for an \"upstream\" remote) dereferences a nil remote and produces the `runtime error: invalid memory address or nil pointer dereference` recorded in the trace at `pkg/cmd/pr/create.getRemotes(...)`. The Slack issue `iss_003` (\"gh pr create just crashes if origin isn't set up right\") reports the same crash in essentially the same scenario and is linked from gh_142, reinforcing that the failure mode is a missing empty/nil-remote guard in `getRemotes` rather than anything specific to a single user's git config.",
         evidence: [
-          { type: "file", label: "Original report — Panic on `gh pr create` when repo has no upstream remote",
-            url: "https://lemma.work/pod/019f01ec-5992-732f-b395-a2b29fc87254/files?file=/issues/gh_142.md" },
+          { type: "file", label: "pkg/cmd/pr/create/create.go:1023 — getRemotes()",
+            url: "https://github.com/cli/cli/blob/954ffc37e5931a9621868a50f05c8fb17e288f19/pkg/cmd/pr/create/create.go#L1023-L1034" },
           { type: "issue", label: "gh pr create just crashes if origin isn't set up right (slack)",
-            url: "https://lemma.work/pod/019f01ec-5992-732f-b395-a2b29fc87254/files?file=/issues/iss_003.md" }
-        ]
+            url: "https://lemma.work/pod/019f01ec-5992-732f-b395-a2b29fc87254/files?file=/issues/iss_003.md" },
+          { type: "file", label: "Original report — Panic on `gh pr create` when repo has no upstream remote",
+            url: "https://lemma.work/pod/019f01ec-5992-732f-b395-a2b29fc87254/files?file=/issues/gh_142.md" }
+        ],
+        proposed_fix: {
+          file_path: "pkg/cmd/pr/create/create.go",
+          url: "https://github.com/cli/cli/blob/954ffc37e5931a9621868a50f05c8fb17e288f19/pkg/cmd/pr/create/create.go#L1023-L1034",
+          line_start: 1023, line_end: 1034,
+          diff: "--- a/pkg/cmd/pr/create/create.go\n+++ b/pkg/cmd/pr/create/create.go\n@@ -1023,12 +1023,15 @@\n func getRemotes(opts *CreateOptions) (ghContext.Remotes, error) {\n \t// TODO: consider obtaining remotes from GitClient instead\n \tremotes, err := opts.Remotes()\n \tif err != nil {\n \t\t// When a repo override value is given, ignore errors when fetching git remotes\n \t\t// to support using this command outside of git repos.\n \t\tif opts.RepoOverride == \"\" {\n \t\t\treturn nil, err\n \t\t}\n \t}\n+\tif len(remotes) == 0 {\n+\t\treturn nil, errors.New(\"no git remotes found; configure `origin` and `upstream`, or pass --repo\")\n+\t}\n \treturn remotes, nil\n }",
+          rationale: "Returning a clear error from `getRemotes` when no remotes are present prevents the caller from dereferencing a nil/empty remotes slice — the exact path the panic trace points at — and gives the user an actionable message instead of a stack trace."
+        }
       },
       gh_158: {
         hypothesis: "The root cause lives in the CLI's auth/token-refresh path: when an SSO-enforced org invalidates a stored token after the ~8-hour session window, the auth subsystem does not treat the resulting `HTTP 401: Bad credentials` as a refresh trigger and surfaces the error instead of calling `gh auth refresh` (or prompting the user to do so). The user is therefore forced to re-run `gh auth login` manually. The same behavior was reported previously as iss_007 (401 errors after being logged in for a few hours with SSO), which the issue record explicitly lists under `related_ids`, and a separate report (cli/cli#13709) indicates `gh auth refresh` itself is unreliable — together these point to the refresh-on-401 logic in the auth package (likely around the request middleware or token store that wraps API calls) as the component that fails to re-establish SSO-scoped credentials. The provided commit evidence matched on keywords only (coding-agent detection, AGENTS.md guidance, dev-tunnels bump) and does not bear on refresh behavior, so it is not cited.",
@@ -562,12 +603,12 @@
             if (result && result.hypothesis) return result;
           } catch (err) { /* fall through to backup take */ }
           const backup = INVESTIGATE_SAMPLES[issue.id];
-          if (backup) return { mode: "backup", run_id: null, hypothesis: backup.hypothesis, evidence: backup.evidence };
-          return { mode: "live", run_id: null, hypothesis: "", evidence: [] };
+          if (backup) return { mode: "backup", run_id: null, hypothesis: backup.hypothesis, evidence: backup.evidence, proposed_fix: backup.proposed_fix || null };
+          return { mode: "live", run_id: null, hypothesis: "", evidence: [], proposed_fix: null };
         }
         const sample = INVESTIGATE_SAMPLES[issue.id];
-        if (sample) return { mode: "sample", run_id: "sample-" + issue.id, hypothesis: sample.hypothesis, evidence: sample.evidence };
-        return { mode: "mock", run_id: "mock-" + issue.id, hypothesis: mockHypothesisForIssue(issue), evidence: mockEvidenceForIssue(issue) };
+        if (sample) return { mode: "sample", run_id: "sample-" + issue.id, hypothesis: sample.hypothesis, evidence: sample.evidence, proposed_fix: sample.proposed_fix || null };
+        return { mode: "mock", run_id: "mock-" + issue.id, hypothesis: mockHypothesisForIssue(issue), evidence: mockEvidenceForIssue(issue), proposed_fix: null };
       },
 
       async _runInvestigateLive(issue, timeoutMs = 30000, pollMs = 3000) {
@@ -589,10 +630,10 @@
           try { cur = await runGet.call(wf, runId); } catch (err) { continue; }
           if (cur && TERMINAL[cur.status]) {
             const synth = (cur.execution_context || {}).synthesize || {};
-            return { mode: "live", run_id: runId, hypothesis: synth.hypothesis || "", evidence: synth.evidence || [] };
+            return { mode: "live", run_id: runId, hypothesis: synth.hypothesis || "", evidence: synth.evidence || [], proposed_fix: synth.proposed_fix || null };
           }
         }
-        return { mode: "live", run_id: runId, hypothesis: "", evidence: [] };
+        return { mode: "live", run_id: runId, hypothesis: "", evidence: [], proposed_fix: null };
       },
     };
 
@@ -859,6 +900,38 @@
       );
     }
 
+    // D5 hero — the verifiable bit. A proposed fix is only ever present when the
+    // crashing symbol was grounded in REAL repository source (fetch_source_evidence),
+    // so the citation links to the actual cli/cli line and the diff is anchored to
+    // the fetched lines. No source => no proposed_fix => this renders nothing.
+    function renderProposedFix(investigation) {
+      const fix = investigation && investigation.proposed_fix;
+      if (!fix || !fix.diff) return "";
+      const range = fix.line_start
+        ? ":" + fix.line_start + (fix.line_end && fix.line_end !== fix.line_start ? "-" + fix.line_end : "")
+        : "";
+      const cite = escapeHtml((fix.file_path || "source") + range);
+      const diffHtml = String(fix.diff).split("\n").map(function (line) {
+        const cls = /^[-+]{3}/.test(line) || line.indexOf("@@") === 0 ? "meta"
+          : line[0] === "+" ? "add"
+          : line[0] === "-" ? "del" : "";
+        return '<span class="dl ' + cls + '">' + escapeHtml(line.length ? line : " ") + "</span>";
+      }).join("");
+      return (
+        '<section class="detail-section">' +
+          '<h2>Proposed fix<span class="verified-pill">verified against real source</span></h2>' +
+          '<div class="fix-card">' +
+            '<a class="code-citation" href="' + escapeHtml(safeUrl(fix.url)) + '" target="_blank" rel="noreferrer">' +
+              "🔗 " + cite +
+              '<span class="cite-hint">open in cli/cli ↗</span>' +
+            "</a>" +
+            '<pre class="diff">' + diffHtml + "</pre>" +
+            (fix.rationale ? '<p class="fix-rationale">' + escapeHtml(fix.rationale) + "</p>" : "") +
+          "</div>" +
+        "</section>"
+      );
+    }
+
     function renderEvidenceCards(investigation) {
       const evidence = investigation && Array.isArray(investigation.evidence)
         ? investigation.evidence
@@ -917,6 +990,7 @@
             renderRelatedList(issue) +
           "</section>" +
           renderHypothesisSummary(investigation) +
+          renderProposedFix(investigation) +
           renderEvidenceCards(investigation) +
         "</article>";
       document.getElementById("back-to-queue").addEventListener("click", function () {
