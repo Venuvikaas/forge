@@ -472,6 +472,35 @@
         repro_steps: "- macOS 14, default zsh\n- Add the completion eval to `.zshrc`\n- Open a new shell — warning prints" }
     ];
 
+    // Backup take (EOD-D4 checkpoint). A real, previously-confirmed live run of the
+    // `investigate` workflow over the two demo-anchor bugs, captured by
+    // scripts/smoke_investigate.py --refresh-samples (mirrored in
+    // seed/investigate_samples.json). Embedded so the deployed app — and the
+    // on-camera demo — always shows a real cited hypothesis even when the live
+    // backend is too slow on the day (EXECUTION.md D4 box 6 documents the latency).
+    const INVESTIGATE_SAMPLES = {
+      gh_142: {
+        hypothesis: "The crash originates in `determineBaseRepo` inside `github.com/cli/cli/v2/pkg/cmd/pr/create`: when the local git config has no `upstream` remote (e.g., a freshly cloned fork with only `origin`), the function appears to dereference a nil remote reference — likely an upstream URL or the upstream config entry it tries to read when picking a base branch — rather than first checking that the upstream remote exists. Repro confirms the trigger: clone a fork, omit the `upstream` remote, run `gh pr create`, and `determineBaseRepo` panics on a nil pointer instead of surfacing a user-facing error asking the user to configure an upstream. The matched Slack report (iss_003) is the same root cause from another reporter, and none of the supplied commit candidates touch this code path, so evidence is limited to the two reports and the stack frame in the signature.",
+        evidence: [
+          { type: "file", label: "Original report — Panic on `gh pr create` when repo has no upstream remote",
+            url: "https://lemma.work/pod/019f01ec-5992-732f-b395-a2b29fc87254/files?file=/issues/gh_142.md" },
+          { type: "issue", label: "gh pr create just crashes if origin isn't set up right (slack)",
+            url: "https://lemma.work/pod/019f01ec-5992-732f-b395-a2b29fc87254/files?file=/issues/iss_003.md" }
+        ]
+      },
+      gh_158: {
+        hypothesis: "The root cause lives in the CLI's auth/token-refresh path: when an SSO-enforced org invalidates a stored token after the ~8-hour session window, the auth subsystem does not treat the resulting `HTTP 401: Bad credentials` as a refresh trigger and surfaces the error instead of calling `gh auth refresh` (or prompting the user to do so). The user is therefore forced to re-run `gh auth login` manually. The same behavior was reported previously as iss_007 (401 errors after being logged in for a few hours with SSO), which the issue record explicitly lists under `related_ids`, and a separate report (cli/cli#13709) indicates `gh auth refresh` itself is unreliable — together these point to the refresh-on-401 logic in the auth package (likely around the request middleware or token store that wraps API calls) as the component that fails to re-establish SSO-scoped credentials. The provided commit evidence matched on keywords only (coding-agent detection, AGENTS.md guidance, dev-tunnels bump) and does not bear on refresh behavior, so it is not cited.",
+        evidence: [
+          { type: "file", label: "Original report — Auth token not refreshed — 401 after SSO session expiry",
+            url: "https://lemma.work/pod/019f01ec-5992-732f-b395-a2b29fc87254/files?file=/issues/gh_158.md" },
+          { type: "issue", label: "Getting 401 errors after being logged in for a few hours (email)",
+            url: "https://lemma.work/pod/019f01ec-5992-732f-b395-a2b29fc87254/files?file=/issues/iss_007.md" },
+          { type: "issue", label: "`gh auth refresh --remove-scopes gist` has no effect (github)",
+            url: "https://github.com/cli/cli/issues/13709" }
+        ]
+      }
+    };
+
     const DataSource = {
       mode: "mock",          // "live" (pod), "seed" (local file), or "sample" (embedded)
       client: null,
@@ -519,27 +548,51 @@
         return SAMPLE_ISSUES;
       },
 
+      // Run the `investigate` workflow and return its result in the contract §5
+      // shape the detail view renders: { hypothesis, evidence:[{type,label,url}] }.
+      // Live mode drives the real workflow (create run -> submit the `intake` form
+      // -> poll for the `synthesize` node output). If the live backend is too slow
+      // or a node fails (EXECUTION.md D4 box 6), we fall back to the embedded backup
+      // take so a real cited hypothesis still shows. Mock/seed/sample modes use the
+      // backup take when available, else a conservative placeholder.
       async triggerInvestigation(issue) {
         if (this.mode === "live" && this.client && this.client.workflows) {
-          const workflows = this.client.workflows;
-          if (typeof workflows.createRun === "function") {
-            const run = await workflows.createRun("investigate");
-            const runId = run && (run.id || run.run_id);
-            if (typeof workflows.submitForm === "function") {
-              await workflows.submitForm(runId, { issue_id: issue.id });
-            }
-            return { mode: "live", run_id: runId || null };
-          }
-          if (typeof workflows.create_run === "function") {
-            const run = await workflows.create_run("investigate");
-            const runId = run && (run.id || run.run_id);
-            if (typeof workflows.submit_form === "function") {
-              await workflows.submit_form(runId, "issue_form", { issue_id: issue.id });
-            }
-            return { mode: "live", run_id: runId || null };
+          try {
+            const result = await this._runInvestigateLive(issue);
+            if (result && result.hypothesis) return result;
+          } catch (err) { /* fall through to backup take */ }
+          const backup = INVESTIGATE_SAMPLES[issue.id];
+          if (backup) return { mode: "backup", run_id: null, hypothesis: backup.hypothesis, evidence: backup.evidence };
+          return { mode: "live", run_id: null, hypothesis: "", evidence: [] };
+        }
+        const sample = INVESTIGATE_SAMPLES[issue.id];
+        if (sample) return { mode: "sample", run_id: "sample-" + issue.id, hypothesis: sample.hypothesis, evidence: sample.evidence };
+        return { mode: "mock", run_id: "mock-" + issue.id, hypothesis: mockHypothesisForIssue(issue), evidence: mockEvidenceForIssue(issue) };
+      },
+
+      async _runInvestigateLive(issue, timeoutMs = 30000, pollMs = 3000) {
+        const wf = this.client.workflows;
+        const createRun = wf.createRun || wf.create_run;
+        const submitForm = wf.submitForm || wf.submit_form;
+        const runGet = wf.runGet || wf.run_get || wf.getRun || wf.get;
+        if (!createRun || !submitForm) return null;
+        const run = await createRun.call(wf, "investigate");
+        const runId = run && (run.id || run.run_id);
+        // The form node is `intake` (input_schema { issue_id }), not "issue_form".
+        try { await submitForm.call(wf, runId, "intake", { issue_id: issue.id }); }
+        catch (err) { await submitForm.call(wf, runId, { issue_id: issue.id }); }
+        const deadline = Date.now() + timeoutMs;
+        const TERMINAL = { COMPLETED: 1, FAILED: 1, CANCELLED: 1, ERROR: 1 };
+        while (runGet && Date.now() < deadline) {
+          await new Promise(function (r) { setTimeout(r, pollMs); });
+          let cur;
+          try { cur = await runGet.call(wf, runId); } catch (err) { continue; }
+          if (cur && TERMINAL[cur.status]) {
+            const synth = (cur.execution_context || {}).synthesize || {};
+            return { mode: "live", run_id: runId, hypothesis: synth.hypothesis || "", evidence: synth.evidence || [] };
           }
         }
-        return { mode: "mock", run_id: "mock-" + issue.id };
+        return { mode: "live", run_id: runId, hypothesis: "", evidence: [] };
       },
     };
 
@@ -891,11 +944,15 @@
       renderDetail(issue);
       try {
         const run = await DataSource.triggerInvestigation(issue);
+        // A run carries its own hypothesis/evidence (live result, backup take, or
+        // sample). Complete when we have a hypothesis to show; otherwise the live
+        // workflow is still running and the progress steps stay visible.
+        const hasResult = run && run.hypothesis;
         AppState.investigations[issueId] = Object.assign(AppState.investigations[issueId], run, {
-          phase: "evidence",
-          status: run.mode === "mock" ? "complete" : "running",
-          hypothesis: run.mode === "mock" ? mockHypothesisForIssue(issue) : "",
-          evidence: run.mode === "mock" ? mockEvidenceForIssue(issue) : [],
+          phase: hasResult ? "synthesis" : "evidence",
+          status: hasResult ? "complete" : "running",
+          hypothesis: (run && run.hypothesis) || "",
+          evidence: (run && run.evidence) || [],
         });
       } catch (err) {
         AppState.investigations[issueId] = {

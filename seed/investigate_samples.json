@@ -1,0 +1,37 @@
+{
+  "gh_142": {
+    "hypothesis": "The crash originates in `determineBaseRepo` inside `github.com/cli/cli/v2/pkg/cmd/pr/create`: when the local git config has no `upstream` remote (e.g., a freshly cloned fork with only `origin`), the function appears to dereference a nil remote reference — likely an upstream URL or the upstream config entry it tries to read when picking a base branch — rather than first checking that the upstream remote exists. Repro confirms the trigger: clone a fork, omit the `upstream` remote, run `gh pr create`, and `determineBaseRepo` panics on a nil pointer instead of surfacing a user-facing error asking the user to configure an upstream. The matched Slack report (iss_003) is the same root cause from another reporter, and none of the supplied commit candidates touch this code path, so evidence is limited to the two reports and the stack frame in the signature.",
+    "evidence": [
+      {
+        "url": "https://lemma.work/pod/019f01ec-5992-732f-b395-a2b29fc87254/files?file=/issues/gh_142.md",
+        "type": "file",
+        "label": "Original report — Panic on `gh pr create` when repo has no upstream remote"
+      },
+      {
+        "url": "https://lemma.work/pod/019f01ec-5992-732f-b395-a2b29fc87254/files?file=/issues/iss_003.md",
+        "type": "issue",
+        "label": "gh pr create just crashes if origin isn't set up right (slack)"
+      }
+    ]
+  },
+  "gh_158": {
+    "hypothesis": "The root cause lives in the CLI's auth/token-refresh path: when an SSO-enforced org invalidates a stored token after the ~8-hour session window, the auth subsystem does not treat the resulting `HTTP 401: Bad credentials` as a refresh trigger and surfaces the error instead of calling `gh auth refresh` (or prompting the user to do so). The user is therefore forced to re-run `gh auth login` manually. The same behavior was reported previously as iss_007 (401 errors after being logged in for a few hours with SSO), which the issue record explicitly lists under `related_ids`, and a separate report (cli/cli#13709) indicates `gh auth refresh` itself is unreliable — together these point to the refresh-on-401 logic in the auth package (likely around the request middleware or token store that wraps API calls) as the component that fails to re-establish SSO-scoped credentials. The provided commit evidence matched on keywords only (coding-agent detection, AGENTS.md guidance, dev-tunnels bump) and does not bear on refresh behavior, so it is not cited.",
+    "evidence": [
+      {
+        "url": "https://lemma.work/pod/019f01ec-5992-732f-b395-a2b29fc87254/files?file=/issues/gh_158.md",
+        "type": "file",
+        "label": "Original report — Auth token not refreshed — 401 after SSO session expiry"
+      },
+      {
+        "url": "https://lemma.work/pod/019f01ec-5992-732f-b395-a2b29fc87254/files?file=/issues/iss_007.md",
+        "type": "issue",
+        "label": "Getting 401 errors after being logged in for a few hours (email)"
+      },
+      {
+        "url": "https://github.com/cli/cli/issues/13709",
+        "type": "issue",
+        "label": "`gh auth refresh --remove-scopes gist` has no effect (github)"
+      }
+    ]
+  }
+}
