@@ -286,6 +286,15 @@
       color: var(--text-2); font-size: 13px;
       overflow-wrap: anywhere;
     }
+    .hypothesis-card {
+      border: 1px solid rgba(255,157,46,0.38);
+      background: rgba(255,157,46,0.08);
+      border-radius: var(--r);
+      padding: var(--s4);
+    }
+    .hypothesis-card p {
+      margin: 0; color: var(--text); font-size: 14px; line-height: 1.65;
+    }
     .detail {
       position: relative; overflow: hidden;
       background: var(--panel); border: 1px solid var(--edge);
@@ -657,6 +666,18 @@
           "</div>"
         );
       }
+      if (investigation.status === "complete") {
+        return (
+          '<div class="investigation-status">' +
+            '<p class="status-title">Investigation complete</p>' +
+            '<ol class="investigation-steps">' +
+              '<li class="investigation-step done"><span class="step-dot"></span><span>Workflow run queued</span></li>' +
+              '<li class="investigation-step done"><span class="step-dot"></span><span>Evidence gathered</span></li>' +
+              '<li class="investigation-step done"><span class="step-dot"></span><span>Hypothesis synthesized</span></li>' +
+            "</ol>" +
+          "</div>"
+        );
+      }
       const phase = investigation.phase || "queued";
       const steps = [
         { key: "queued", label: "Workflow run queued" },
@@ -710,6 +731,24 @@
         });
       });
       return evidence.slice(0, 3);
+    }
+
+    function mockHypothesisForIssue(issue) {
+      const related = relatedCount(issue);
+      const repro = issue.repro_steps ? "the captured repro steps" : "the original report";
+      return "Start investigation in the code path described by " + repro +
+        (related ? " and compare it with the linked related reports." : ".") +
+        " The evidence below is the basis for this hypothesis.";
+    }
+
+    function renderHypothesisSummary(investigation) {
+      if (!investigation || !investigation.hypothesis) return "";
+      return (
+        '<section class="detail-section">' +
+          "<h2>Root-cause hypothesis</h2>" +
+          '<div class="hypothesis-card"><p>' + escapeHtml(investigation.hypothesis) + "</p></div>" +
+        "</section>"
+      );
     }
 
     function renderEvidenceCards(investigation) {
@@ -769,6 +808,7 @@
             "<h2>Related reports</h2>" +
             renderRelatedList(issue) +
           "</section>" +
+          renderHypothesisSummary(investigation) +
           renderEvidenceCards(investigation) +
         "</article>";
       document.getElementById("back-to-queue").addEventListener("click", function () {
@@ -799,6 +839,7 @@
         AppState.investigations[issueId] = Object.assign(AppState.investigations[issueId], run, {
           phase: "evidence",
           status: run.mode === "mock" ? "complete" : "running",
+          hypothesis: run.mode === "mock" ? mockHypothesisForIssue(issue) : "",
           evidence: run.mode === "mock" ? mockEvidenceForIssue(issue) : [],
         });
       } catch (err) {
