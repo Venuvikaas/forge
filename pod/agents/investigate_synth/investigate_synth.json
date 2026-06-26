@@ -16,7 +16,9 @@
       "has_trace": { "type": "boolean" },
       "report_evidence": { "type": "object" },
       "commit_evidence": { "type": "array" },
-      "issue_evidence": { "type": "array" }
+      "issue_evidence": { "type": "array" },
+      "source_found": { "type": "boolean" },
+      "source_evidence": { "type": "object" }
     },
     "required": ["issue_id"]
   },
@@ -37,6 +39,19 @@
           },
           "required": ["type", "label", "url"]
         }
+      },
+      "proposed_fix": {
+        "type": "object",
+        "description": "Only when real source lines were provided. A small fix anchored to the fetched lines — never invented context.",
+        "properties": {
+          "file_path": { "type": "string" },
+          "url": { "type": "string", "description": "the real blob/<sha>/<path>#Lstart-Lend URL from source_evidence" },
+          "line_start": { "type": "integer" },
+          "line_end": { "type": "integer" },
+          "diff": { "type": "string", "description": "small unified diff anchored to the fetched lines" },
+          "rationale": { "type": "string", "description": "one sentence: why this change fixes the root cause" }
+        },
+        "required": ["file_path", "url", "diff"]
       }
     },
     "required": ["issue_id", "hypothesis", "evidence"]
