@@ -50,6 +50,11 @@ any wasted complexity?" score and the hiring track's "how they scoped and defend
 - **Why:** The connector logic is the work; it's testable without a pod and unblocks ingest immediately. GitHub is the one non-Surface source, so this is the only connector we own.
 - **Rejected:** Standing up a deployed Lemma Function on Day 1. Reason: deployment overhead with no demo value yet.
 
+### D-010 · Operator UI is a single-file HTML Lemma App (not Vite/React)
+- **Decision:** Build `app/index.html` as a no-build HTML Lemma App (loads `lemma-client.js` from the host-injected `__LEMMA_CONFIG__`), with a `DataSource.listIssues()` seam that reads `seed/issues.json` in mock mode and `client.records.list("issues")` against the live pod.
+- **Why:** The whole product is one operator console (queue → detail → investigate); HTML deploys with zero build and dodges the Windows/patched-CLI Vite build+deploy risk. The mock/live seam lets Lane B build full-speed against seed data with no dependency on Lane A — exactly the Day-1 parallelism the plan calls for.
+- **Rejected:** Vite + React scaffold. Reason: routing/bundler overhead for a single-surface app, plus a heavier deploy path on Windows; revisit only if the UI genuinely needs client-side routing/state later.
+
 ---
 
 ## Scope & kill criteria (Phase 0 agreement)
