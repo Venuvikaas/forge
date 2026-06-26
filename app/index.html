@@ -424,29 +424,81 @@
        present — we degrade to "mock" mode and read seed/issues.json so the
        queue still renders. The data seam lives in DataSource.listIssues().
     ---------------------------------------------------------------- */
+    /* Embedded sample queue — the safety net. Used only when we're NOT live
+       (not signed in, or the pod is unreachable). The deployed app is a single
+       file with no seed/ sibling, so a relative fetch can't be the fallback;
+       this inline curated set (a slice of seed/issues.json, same contract §1
+       shape) guarantees the console always renders something real-looking. */
+    const SAMPLE_ISSUES = [
+      { id: "gh_142", source: "github", external_id: "142", priority: "critical", status: "triaged",
+        related_ids: ["iss_003"], linked_prs: [],
+        title: "Panic on `gh pr create` when repo has no upstream remote",
+        body: "Running `gh pr create` in a freshly cloned fork with no `upstream` configured crashes with a nil pointer dereference instead of a helpful error.\n\npanic: runtime error: invalid memory address or nil pointer dereference",
+        repro_steps: "- Fork a repo and clone your fork\n- Do NOT add an `upstream` remote\n- Run `gh pr create`\n- Observe the panic" },
+      { id: "iss_003", source: "slack", external_id: null, priority: "high", status: "triaged",
+        related_ids: ["gh_142"], linked_prs: [],
+        title: "gh pr create just crashes if origin isn't set up right",
+        body: "from #eng-help: \"hey is anyone else seeing `gh pr create` straight up crash? it dies with some go panic about a nil pointer. no upstream remote on my side.\"",
+        repro_steps: "- Clone a fork without an upstream remote\n- Run `gh pr create`\n- Crash instead of a guided prompt" },
+      { id: "gh_158", source: "github", external_id: "158", priority: "critical", status: "triaged",
+        related_ids: ["iss_007"], linked_prs: [],
+        title: "Auth token not refreshed — 401 after SSO session expiry",
+        body: "After my org's SSO session expires (~8h), every `gh` command returns `HTTP 401: Bad credentials`. The stored token is never refreshed and there is no prompt to re-authenticate.",
+        repro_steps: "- `gh auth login` with an SSO-enforced org\n- Wait ~8 hours for the session to expire\n- Run any command\n- Persistent `HTTP 401: Bad credentials`" },
+      { id: "iss_007", source: "email", external_id: null, priority: "high", status: "triaged",
+        related_ids: ["gh_158"], linked_prs: [],
+        title: "Getting 401 errors after being logged in for a few hours",
+        body: "Forwarded from support@: \"I log in fine in the morning but by mid-afternoon every command fails with a 401. Logging in again fixes it. We use Okta SSO.\"",
+        repro_steps: "- Authenticate in the morning via Okta SSO\n- Use the CLI normally\n- Commands fail with 401 until re-login" },
+      { id: "gh_175", source: "github", external_id: "175", priority: "critical", status: "triaged",
+        related_ids: [], linked_prs: [],
+        title: "Data loss: `gh gist edit` silently truncates files larger than 1MB",
+        body: "Editing a gist whose file is >1MB through `gh gist edit` saves a truncated version, silently discarding everything past ~1MB. No warning.",
+        repro_steps: "- Create a gist with a file >1MB\n- `gh gist edit <id>` and save\n- The remote file is truncated to ~1MB" },
+      { id: "gh_171", source: "github", external_id: "171", priority: "high", status: "triaged",
+        related_ids: ["iss_011"], linked_prs: [],
+        title: "`gh repo clone` hangs indefinitely on large repos behind a corporate proxy",
+        body: "Cloning a >1GB repo through our corporate HTTPS proxy hangs forever — no progress, no timeout. Plain `git clone` works. Looks like the CLI isn't honoring `HTTPS_PROXY`.",
+        repro_steps: "- Set `HTTPS_PROXY` to a corporate proxy\n- `gh repo clone owner/large-repo`\n- Hangs with no output" },
+      { id: "iss_011", source: "slack", external_id: null, priority: "normal", status: "triaged",
+        related_ids: ["gh_171"], linked_prs: [],
+        title: "clone freezes forever on the corp proxy",
+        body: "from #it-support: \"anyone got `gh repo clone` working on the VPN/proxy? mine just freezes, no error, no progress bar. regular git clone is fine.\"",
+        repro_steps: "- On corporate VPN/proxy\n- `gh repo clone` a moderately large repo\n- Hangs with no feedback" },
+      { id: "gh_180", source: "github", external_id: "180", priority: "low", status: "triaged",
+        related_ids: [], linked_prs: [],
+        title: "Autocompletion script for zsh emits a deprecation warning on macOS",
+        body: "`eval \"$(gh completion -s zsh)\"` prints `compdef: function definition file not found` warnings on macOS 14. Functional but noisy.",
+        repro_steps: "- macOS 14, default zsh\n- Add the completion eval to `.zshrc`\n- Open a new shell — warning prints" }
+    ];
+
     const DataSource = {
-      mode: "mock",          // "live" once connected to the pod, else "mock"
+      mode: "mock",          // "live" (pod), "seed" (local file), or "sample" (embedded)
       client: null,
       user: null,
       async init() {
         const cfg = window.__LEMMA_CONFIG__;
         if (cfg && window.LemmaClient) {
-          try {
-            this.client = new window.LemmaClient.LemmaClient();
-            const state = await this.client.initialize();   // { status, user }
-            if (state && state.status === "authenticated") {
-              this.mode = "live";
-              this.user = state.user || null;
+          // One retry: the pod backend can 503/timeout transiently on first hit.
+          for (let attempt = 0; attempt < 2 && this.mode !== "live"; attempt++) {
+            try {
+              this.client = this.client || new window.LemmaClient.LemmaClient();
+              const state = await this.client.initialize();   // { status, user }
+              if (state && state.status === "authenticated") {
+                this.mode = "live";
+                this.user = state.user || null;
+              }
+            } catch (err) {
+              console.warn("Lemma init attempt " + (attempt + 1) + " failed:", err);
             }
-          } catch (err) {
-            console.warn("Lemma init failed, falling back to mock data:", err);
           }
         }
         return this.mode;
       },
 
-      /* The data seam. Day 1 reads the mock fixture; the EOD checkpoint box
-         flips this to the live `issues` Table — same row shape (contracts §1). */
+      /* The data seam. Live reads the real `issues` Table; otherwise we try a
+         local seed file (dev convenience) and finally the embedded sample —
+         so the deployed app NEVER dead-ends on a missing seed file. */
       async listIssues() {
         if (this.mode === "live") {
           const res = await this.client.records.list("issues", { limit: 100 });
@@ -459,9 +511,12 @@
               : r;
           });
         }
-        const res = await fetch("../seed/issues.json", { cache: "no-store" });
-        if (!res.ok) throw new Error("could not load seed/issues.json (" + res.status + ")");
-        return res.json();
+        try {
+          const res = await fetch("../seed/issues.json", { cache: "no-store" });
+          if (res.ok) { this.mode = "seed"; return await res.json(); }
+        } catch (err) { /* no local seed (e.g. deployed) — use embedded sample */ }
+        this.mode = "sample";
+        return SAMPLE_ISSUES;
       },
 
       async triggerInvestigation(issue) {
@@ -901,6 +956,7 @@
         '<span class="g-total">' + total + " in queue</span>";
     }
 
+    const SOURCE_PILL_LABELS = { live: "live pod", seed: "seed data", sample: "sample data", mock: "sample data" };
     function renderSourcePill() {
       const pill = document.getElementById("source-pill");
       const label = document.getElementById("source-label");
@@ -910,7 +966,7 @@
         label.textContent = "live pod";
       } else {
         pill.classList.add("mock");
-        label.textContent = "mock data";
+        label.textContent = SOURCE_PILL_LABELS[DataSource.mode] || "sample data";
       }
     }
 
@@ -920,6 +976,7 @@
         await DataSource.init();
         renderSourcePill();
         const issues = await DataSource.listIssues();
+        renderSourcePill();   // mode is finalized in listIssues (seed vs sample)
         AppState.issues = issues || [];
         renderFurnaceGauge();
         if (!issues || issues.length === 0) {
