@@ -13,18 +13,44 @@ stamps the row ``triaged``. This module just drives that round-trip per issue.
 
 from __future__ import annotations
 
+import datetime
 import json
 import pathlib
 import sys
 import time
 
-sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[2]))
+REPO_ROOT = pathlib.Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(REPO_ROOT))
 
 from pod.lemma_client import get_pod, load_env  # noqa: E402
 from pod.tables.issues_table import TABLE_NAME  # noqa: E402
 
 AGENT_NAME = "triage"
 FUNCTION_NAME = "normalize_priority"
+
+# Raw agent output is logged here for debugging (gitignored). The parsed verdict
+# plus the full conversation transcript land per issue so a wrong/odd
+# classification can be inspected without re-running the agent.
+LOG_DIR = REPO_ROOT / "logs" / "triage"
+
+
+def _log_raw_output(issue_id: str, prompt: str, verdict: dict, messages: list[dict]) -> None:
+    """Persist the raw triage exchange to logs/triage/<issue_id>.json."""
+    try:
+        LOG_DIR.mkdir(parents=True, exist_ok=True)
+        record = {
+            "issue_id": issue_id,
+            "logged_at": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+            "conversation_id": verdict.get("_conversation_id"),
+            "prompt": prompt,
+            "verdict": {k: v for k, v in verdict.items() if not k.startswith("_")},
+            "messages": messages,
+        }
+        (LOG_DIR / f"{issue_id}.json").write_text(
+            json.dumps(record, indent=2, ensure_ascii=False), encoding="utf-8"
+        )
+    except Exception as exc:  # logging must never break triage
+        print(f"  [warn] could not write triage log for {issue_id}: {exc}")
 
 # Agent runs are async; poll the conversation until it settles.
 _TERMINAL = {"COMPLETED", "FAILED", "STOPPED"}
@@ -74,7 +100,8 @@ def _extract_output(messages: list[dict]) -> dict:
 
 def run_agent(pod, issue: dict, timeout_s: int = 150, poll_s: float = 3.0) -> dict:
     """Run the triage agent over one issue; return its raw verdict dict."""
-    conv = pod.agents.run(AGENT_NAME, _build_prompt(issue))
+    prompt = _build_prompt(issue)
+    conv = pod.agents.run(AGENT_NAME, prompt)
     conv_id = str(conv.id)
 
     deadline = time.monotonic() + timeout_s
@@ -89,6 +116,7 @@ def run_agent(pod, issue: dict, timeout_s: int = 150, poll_s: float = 3.0) -> di
     messages = pod.conversations.messages(conv_id).to_dict().get("items", [])
     verdict = _extract_output(messages)
     verdict["_conversation_id"] = conv_id
+    _log_raw_output(issue["id"], prompt, verdict, messages)
     return verdict
 
 
