@@ -1,0 +1,38 @@
+{
+  // D3 Lane A box 2 — the single LLM YES/NO confirm step. Given two issues
+  // (the new one + its top similarity hit), decide whether they are the SAME
+  // underlying problem. Read-only judgment; output is strict JSON per
+  // contracts.md §4. The driver only ever asks it about the top candidate.
+  "name": "dedup_confirm",
+  "description": "Decides whether two issues are duplicates of the same underlying problem. Read-only — returns strict JSON {is_duplicate, reason}; never writes.",
+  "instruction": { "$file": "instruction.md" },
+  "toolsets": ["POD"],
+  "output_schema": {
+    "type": "object",
+    "properties": {
+      "is_duplicate": {
+        "type": "boolean",
+        "description": "true only if both reports describe the same underlying bug/request."
+      },
+      "reason": {
+        "type": "string",
+        "description": "One short evidence-based sentence citing the shared (or differing) root cause."
+      }
+    },
+    "required": ["is_duplicate", "reason"]
+  },
+  "permissions": {
+    "grants": [
+      {
+        "resource_type": "datastore_table",
+        "resource_name": "issues",
+        "permission_ids": ["datastore.table.read", "datastore.record.read"]
+      },
+      {
+        "resource_type": "folder",
+        "resource_name": "/issues",
+        "permission_ids": ["folder.read"]
+      }
+    ]
+  }
+}
