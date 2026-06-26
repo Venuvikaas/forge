@@ -145,7 +145,7 @@ forge/
 - [ ] **[A]** Verify against the known dup pairs in seed data. — commit: `test(pod): dedup catches seeded duplicates`
 
 ### Lane B — Queue polish
-- [ ] **[B]** "N related" badge on cards (reads `related_ids`). — commit: `feat(app): related count badge`
+- [x] **[B]** "N related" badge on cards (reads `related_ids`). — commit: `feat(app): related count badge` _(cards read `related_ids` and show a compact `N related` badge only when the count is nonzero; inline script parse check PASS.)_
 - [ ] **[B]** Related issues list inside detail view, clickable. — commit: `feat(app): related issues panel`
 - [ ] **[B]** Filter by priority / source. — commit: `feat(app): queue filters`
 - [ ] **[B]** Start `docs/demo-script.md` (storyboard from PRD §7). — commit: `docs: draft demo script`
