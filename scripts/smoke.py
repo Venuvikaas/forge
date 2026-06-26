@@ -41,13 +41,25 @@ STAGES = [
 ]
 
 
-def run_stage(key: str, script: str) -> tuple[bool, float]:
-    """Run one stage smoke as a subprocess; stream its output; return (ok, secs)."""
-    print(f"\n{'=' * 64}\n>> {key}  ({script})\n{'=' * 64}", flush=True)
+def run_stage(key: str, script: str, attempts: int = 2) -> tuple[bool, float]:
+    """Run one stage smoke as a subprocess; stream its output; return (ok, secs).
+
+    The pod backend is intermittently degraded (EXECUTION.md), so a stage can fail
+    transiently (a node times out, a 503). Retry once before calling it a failure —
+    each stage is idempotent and re-resolves a fresh token on start.
+    """
     started = time.monotonic()
-    proc = subprocess.run([sys.executable, str(SCRIPTS / script)])
+    ok = False
+    for attempt in range(1, attempts + 1):
+        label = key if attempt == 1 else f"{key} (retry {attempt - 1})"
+        print(f"\n{'=' * 64}\n>> {label}  ({script})\n{'=' * 64}", flush=True)
+        proc = subprocess.run([sys.executable, str(SCRIPTS / script)])
+        ok = proc.returncode == 0
+        if ok:
+            break
+        if attempt < attempts:
+            print(f"-- {key}: FAIL (attempt {attempt}); retrying once…", flush=True)
     elapsed = time.monotonic() - started
-    ok = proc.returncode == 0
     print(f"-- {key}: {'PASS' if ok else 'FAIL'} in {elapsed:.0f}s", flush=True)
     return ok, elapsed
 
