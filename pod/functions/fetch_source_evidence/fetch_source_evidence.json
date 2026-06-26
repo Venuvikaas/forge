@@ -1,0 +1,26 @@
+{
+  // D5 HERO — make the investigation verifiable. Grounds the crashing symbol
+  // (parsed from the issue's stack frame) in the ACTUAL repository via PUBLIC
+  // GitHub endpoints (commits + git trees + raw CDN), greps for the symbol, and
+  // returns the real matched lines plus a blob/<sha>/<path>#Lstart-Lend URL.
+  // Never fabricates: if the symbol isn't found in real source, returns
+  // found=false with no evidence. Reads the issue body, so it needs issues:read.
+  "name": "fetch_source_evidence",
+  "description": "Ground the crashing symbol in real repository source: parse the stack frame, locate the symbol via public GitHub tree + raw content, and return the matched lines with a real blob URL (never fabricated).",
+  "type": "API",
+  "code": { "$file": "code.py" },
+  "permissions": {
+    "grants": [
+      {
+        "resource_type": "datastore_table",
+        "resource_name": "issues",
+        "permission_ids": ["datastore.table.read", "datastore.record.read"]
+      },
+      {
+        "resource_type": "folder",
+        "resource_name": "/issues",
+        "permission_ids": ["folder.read"]
+      }
+    ]
+  }
+}
