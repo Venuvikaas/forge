@@ -100,7 +100,11 @@
       font-family: var(--mono); font-size: 10px; letter-spacing: 0.04em;
       text-transform: uppercase; padding: 2px 7px; border-radius: 5px;
       border: 1px solid var(--border-strong); color: var(--text-2);
+      white-space: nowrap;
     }
+    .source.s-github { color: #c9d1d9; border-color: #57606a; background: rgba(139,148,158,0.12); }
+    .source.s-slack  { color: #7ee787; border-color: #3fb950; background: rgba(63,185,80,0.10); }
+    .source.s-email  { color: #d2a8ff; border-color: #a371f7; background: rgba(163,113,247,0.10); }
     /* priority badge + color coding */
     .badge {
       flex-shrink: 0;
@@ -299,6 +303,13 @@
       });
     }
 
+    const SOURCE_LABELS = { github: "GitHub", slack: "Slack", email: "Email" };
+    function sourceBadge(source) {
+      const key = SOURCE_LABELS[source] ? source : "unknown";
+      const label = SOURCE_LABELS[source] || String(source || "Unknown");
+      return '<span class="source s-' + escapeHtml(key) + '">' + escapeHtml(label) + "</span>";
+    }
+
     function issueCard(issue) {
       const key = issue.priority || "untriaged";
       return (
@@ -307,7 +318,7 @@
             '<h3 class="title">' + escapeHtml(issue.title) + "</h3>" +
             '<div class="meta">' +
               '<span class="id">' + escapeHtml(issue.id) + "</span>" +
-              '<span class="source">' + escapeHtml(issue.source) + "</span>" +
+              sourceBadge(issue.source) +
             "</div>" +
           "</div>" +
           '<span class="badge p-' + key + '">' + escapeHtml(key) + "</span>" +
@@ -341,7 +352,7 @@
         '<article class="detail p-' + key + '">' +
           "<h1>" + escapeHtml(issue.title) + "</h1>" +
           '<div class="meta">' +
-            '<span class="source">' + escapeHtml(issue.source) + "</span>" +
+            sourceBadge(issue.source) +
             '<span class="id">' + escapeHtml(issue.id) + "</span>" +
             '<span class="badge p-' + key + '">' + escapeHtml(key) + "</span>" +
           "</div>" +
