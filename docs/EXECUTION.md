@@ -214,6 +214,23 @@ forge/
 
 ---
 
+## ☐ POST-D5 — Trust controls & multi-source expansion (June 27)
+
+> Deliberately un-cuts **multi-repo** from the `DECISIONS.md` cut-list and adds the
+> two trust features a real triage product needs: **human override controls** and an
+> **audit/evidence timeline**. Connectors stay app-first (GitHub real; Slack/email
+> live OAuth deferred). Each box → one commit. 🔗 CONTRACT changes go in `docs/contracts.md`.
+
+- [x] **[A]** 🔗 Schema: add `assignee` + `source_account` (multi-repo/workspace/mailbox) columns to `issues`; new `events` audit table. — commit: `feat(pod): assignee + source_account + events table` _(live: created `events` table (`pod/tables/events_table.py` + `scripts/init_events_table.py`); added nullable `assignee` + `source_account` TEXT cols to `issues` via additive `add_column` (`scripts/add_override_columns.py`, idempotent). Contract §1 + new §7 (events table + override fn input shapes) updated.)_
+- [ ] **[A]** Override writers: `set_priority`, `set_assignee` Functions; `set_status` + these append to `events`. — commit: `feat(pod): override writers log to events trail`
+- [ ] **[A]** Backfill: synthesize `ingested`/`triaged`/`linked` events for existing rows; stamp `source_account`. — commit: `feat(pod): backfill events + source_account`
+- [ ] **[B]** App: source + account **switcher** (multi-repo/workspace/mailbox) in the queue. — commit: `feat(app): source + account switcher`
+- [ ] **[B]** App: **three-dot override menu** (Priority/Assignee/Status), hidden until an issue is open, top-right. — commit: `feat(app): human override controls`
+- [ ] **[B]** App: **audit/evidence timeline** in the detail view (live events + mock synthesis). — commit: `feat(app): audit timeline`
+- [ ] **[A+B]** Wire app overrides live through the new Functions; verify end-to-end; redeploy. — commit: `feat(app): live override + timeline wiring`
+
+---
+
 ## ☐ DAY 6 — June 30 · Submit (🔴 do together)
 
 - [ ] **[A+B]** Final run-through on the curated dataset (twice). — _(no commit; rehearsal)_

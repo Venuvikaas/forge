@@ -21,6 +21,8 @@ telling the other person.
 | `status` | enum | `new` \| `triaged` \| `investigating` \| `resolved` |
 | `related_ids` | string[] | ids of confirmed duplicates / related issues. No DB default — writers send `[]`. |
 | `linked_prs` | string[] | PR identifiers that fix it (optional). No DB default — writers send `[]`. |
+| `assignee` | string \| null | operator-assigned owner; null = Unassigned. Written by the App's human-override controls via `set_assignee`. |
+| `source_account` | string \| null | the origin *within* a source — GitHub repo (`cli/cli`), Slack channel (`#eng-help`), mailbox (`support@`). The dimension the App's repo/workspace/mailbox switcher groups by (multi-source). |
 | `created_at` | ISO datetime | system-managed (auto) |
 | `updated_at` | ISO datetime | system-managed (auto) |
 
@@ -79,6 +81,37 @@ UI rule: render evidence as clickable links. **No confidence %** — show eviden
 }
 ```
 
+## 7. `events` Table — audit / evidence trail
+
+One row per thing that happened to an issue, rendered as a timeline on the detail view.
+
+| Field | Type | Notes |
+|---|---|---|
+| `id` | string (PK) | `evt_<uuid4hex>` |
+| `issue_id` | string | the `issues.id` this event belongs to |
+| `kind` | enum | `ingested` \| `triaged` \| `linked` \| `investigated` \| `priority_changed` \| `assignee_changed` \| `status_changed` \| `note` |
+| `actor` | enum | `system` (pipeline) \| `ai` (an agent) \| `operator` (a human in the App) |
+| `summary` | text | one human-readable line, e.g. `AI triaged as Critical` |
+| `detail` | text \| null | optional JSON string with structured before/after, e.g. `{"from":"high","to":"critical"}` |
+| `created_at` | ISO datetime | system-managed (auto) — the timeline timestamp |
+
+Writers (the only things that append events): `set_priority`, `set_assignee`, `set_status`
+(operator overrides), and the backfill/ingest path (`ingested`/`triaged`/`linked`). The App
+reads events with `records.list("events", {limit})` and filters by `issue_id` client-side; in
+mock/seed mode it **synthesizes** the trail from the issue's own fields so the timeline always renders.
+
+### Override Functions — input shapes
+
+```json
+// set_priority — validates against the priority enum, writes, logs a priority_changed event
+{ "issue_id": "gh_142", "priority": "high" }
+// set_assignee — writes assignee (empty/null = Unassigned), logs an assignee_changed event
+{ "issue_id": "gh_142", "assignee": "alex" }
+// set_status (existing) — now also logs a status_changed event
+{ "issue_id": "gh_142", "status": "resolved" }
+```
+All three return `{ ..., ok: bool, error?: string }`; `ok:false` (no write) on an invalid enum value.
+
 ---
 
 ### Change log for this contract
@@ -103,3 +136,7 @@ UI rule: render evidence as clickable links. **No confidence %** — show eviden
     So `related_ids` / `linked_prs` have no column default; callers write `[]`
     explicitly on insert (ingest already does). File search can also 500
     transiently while a doc is mid-indexing — poll/retry, don't fail on first error.
+- 2026-06-27 — trust controls & multi-source (POST-D5). **Additive, no renames.**
+  `issues` gains nullable `assignee` + `source_account` (§1). New `events` audit
+  table (§7) + override Functions `set_priority` / `set_assignee` (and `set_status`
+  now logs an event). Un-cuts multi-repo from `DECISIONS.md`.
