@@ -11,6 +11,8 @@ granted writer for the operator-driven transitions the App exposes — chiefly
 reaches the table.
 """
 
+import json
+import uuid
 from typing import Optional
 
 from pydantic import BaseModel
@@ -18,6 +20,22 @@ from lemma_sdk import Pod
 
 # The issues.status enum, kept in sync with docs/contracts.md §1.
 VALID_STATUSES = {"new", "triaged", "investigating", "resolved"}
+
+
+def _append_event(pod, issue_id, kind, actor, summary, detail=None):
+    """Append one row to the ``events`` audit trail. Best-effort: a logging
+    failure must never fail the status write the operator asked for."""
+    try:
+        pod.records.create("events", {
+            "id": "evt_" + uuid.uuid4().hex,
+            "issue_id": issue_id,
+            "kind": kind,
+            "actor": actor,
+            "summary": summary,
+            "detail": json.dumps(detail) if detail is not None else None,
+        })
+    except Exception:
+        pass
 
 
 class SetStatusInput(BaseModel):
@@ -43,6 +61,19 @@ async def set_status(ctx, data: SetStatusInput) -> SetStatusResult:
         )
 
     pod = Pod.from_env()
-    pod.table("issues").update(data.issue_id, {"status": requested})
+    issues = pod.table("issues")
+    previous = None
+    try:
+        row = issues.get(data.issue_id)
+        previous = getattr(row, "status", None) or (row.get("status") if isinstance(row, dict) else None)
+    except Exception:
+        previous = None
+
+    issues.update(data.issue_id, {"status": requested})
+    _append_event(
+        pod, data.issue_id, "status_changed", "operator",
+        f"Status changed to {requested.capitalize()}",
+        {"from": previous, "to": requested},
+    )
 
     return SetStatusResult(issue_id=data.issue_id, status=requested, ok=True)

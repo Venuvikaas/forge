@@ -1,0 +1,23 @@
+{
+  // POST-D5 trust controls — the granted writer for the operator's ASSIGNEE
+  // override (the App's three-dot menu). Empty assignee clears to Unassigned.
+  // Writes the row and appends an assignee_changed row to the events trail.
+  "name": "set_assignee",
+  "description": "Operator override: set an issue's assignee (empty clears to Unassigned), and log an assignee_changed event.",
+  "type": "API",
+  "code": { "$file": "code.py" },
+  "permissions": {
+    "grants": [
+      {
+        "resource_type": "datastore_table",
+        "resource_name": "issues",
+        "permission_ids": ["datastore.table.read", "datastore.record.read", "datastore.record.write"]
+      },
+      {
+        "resource_type": "datastore_table",
+        "resource_name": "events",
+        "permission_ids": ["datastore.table.read", "datastore.record.read", "datastore.record.write"]
+      }
+    ]
+  }
+}

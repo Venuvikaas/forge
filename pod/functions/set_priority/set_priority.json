@@ -1,0 +1,24 @@
+{
+  // POST-D5 trust controls — the granted writer for the operator's PRIORITY
+  // override (the App's three-dot menu). Validates against the issues.priority
+  // enum, writes the row, and appends a priority_changed row to the events trail.
+  // Grants: issues read+write (the override) and events write (the audit log).
+  "name": "set_priority",
+  "description": "Operator override: set an issue's priority (critical|high|normal|low) after validating it against the enum, and log a priority_changed event.",
+  "type": "API",
+  "code": { "$file": "code.py" },
+  "permissions": {
+    "grants": [
+      {
+        "resource_type": "datastore_table",
+        "resource_name": "issues",
+        "permission_ids": ["datastore.table.read", "datastore.record.read", "datastore.record.write"]
+      },
+      {
+        "resource_type": "datastore_table",
+        "resource_name": "events",
+        "permission_ids": ["datastore.table.read", "datastore.record.read", "datastore.record.write"]
+      }
+    ]
+  }
+}
