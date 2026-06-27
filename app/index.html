@@ -240,19 +240,6 @@
     .card.resolved { opacity: 0.62; }
     .card.resolved .title { text-decoration: line-through; text-decoration-color: var(--edge-2); }
 
-    /* resolve / re-open action in the detail toolbar */
-    .status-btn {
-      font: inherit; font-size: 11px; font-weight: 700;
-      letter-spacing: 0.08em; text-transform: uppercase;
-      border-radius: var(--r); padding: 9px 14px; cursor: pointer;
-      background: transparent; color: var(--quench); border: 1px solid rgba(91,184,176,0.6);
-    }
-    .status-btn:hover:not(:disabled), .status-btn:focus-visible {
-      background: var(--quench-dim); outline: none;
-    }
-    .status-btn.reopen { color: var(--text-2); border-color: var(--edge-2); }
-    .status-btn:disabled { opacity: 0.6; cursor: default; }
-
     /* heat rail + critical glow, per priority */
     .card.p-critical::before { background: linear-gradient(var(--crit), #c33a16); box-shadow: 0 0 16px var(--crit-glow); }
     .card.p-high::before     { background: var(--high); }
@@ -269,7 +256,7 @@
     }
 
     /* ---- Detail view ---- */
-    .toolbar { margin-bottom: var(--s4); }
+    .toolbar { display: flex; align-items: center; gap: var(--s3); margin-bottom: var(--s4); }
     .back-btn {
       font: inherit; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase;
       color: var(--text-2); background: transparent; border: 1px solid var(--edge-2);
@@ -485,6 +472,106 @@
     }
     .state button:hover { background: #ffad4f; }
 
+    /* ---- Source / account switcher (multi-repo · multi-workspace · multi-mailbox) ---- */
+    .switcher { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s3); margin-bottom: var(--s4); }
+    .src-tabs {
+      display: inline-flex; gap: 2px; padding: 3px;
+      border: 1px solid var(--edge-2); border-radius: 999px; background: var(--panel);
+    }
+    .src-tab {
+      font: inherit; font-family: var(--mono); font-size: 11px; letter-spacing: 0.04em;
+      color: var(--text-2); background: transparent; border: 0; border-radius: 999px;
+      padding: 5px 13px; cursor: pointer; white-space: nowrap;
+      display: inline-flex; align-items: center; gap: 6px; transition: color .12s ease, background .12s ease;
+    }
+    .src-tab:hover { color: var(--text); }
+    .src-tab:focus-visible { outline: none; color: var(--text); box-shadow: inset 0 0 0 1px var(--quench); }
+    .src-tab.active { background: var(--panel-2); color: var(--text); box-shadow: inset 0 0 0 1px var(--edge-2); }
+    .src-tab.active[data-source="github"] { color: #d6cdbe; }
+    .src-tab.active[data-source="slack"]  { color: var(--norm); }
+    .src-tab.active[data-source="email"]  { color: var(--quench); }
+    .src-tab .tab-count { color: var(--mute); font-size: 10px; }
+    .switcher-label {
+      font-family: var(--mono); font-size: 10px; letter-spacing: 0.1em;
+      text-transform: uppercase; color: var(--mute);
+    }
+    .account-select {
+      color: var(--text); background: var(--panel); border: 1px solid var(--edge-2);
+      border-radius: var(--r); padding: 6px 26px 6px 10px; font: inherit;
+      font-family: var(--mono); font-size: 11px; cursor: pointer;
+    }
+    .account-select:focus-visible { border-color: var(--quench); outline: none; }
+    .acct { font-family: var(--mono); font-size: 10px; color: var(--mute); }
+
+    /* ---- Human override controls — the three-dot menu (hidden until an issue is open) ---- */
+    .detail-menu-wrap { position: relative; margin-left: auto; z-index: 6; }
+    .kebab {
+      font: inherit; font-size: 19px; line-height: 1; color: var(--text-2);
+      background: var(--panel-2); border: 1px solid var(--edge-2); border-radius: var(--r);
+      width: 34px; height: 34px; cursor: pointer;
+      display: inline-flex; align-items: center; justify-content: center;
+    }
+    .kebab:hover, .kebab:focus-visible, .kebab[aria-expanded="true"] {
+      color: var(--text); border-color: var(--quench); outline: none;
+    }
+    .override-menu {
+      position: absolute; top: 41px; right: 0; width: 270px;
+      background: var(--panel-2); border: 1px solid var(--edge-2); border-radius: var(--r-lg);
+      box-shadow: 0 18px 50px -16px rgba(0,0,0,0.72); padding: var(--s4); display: grid; gap: var(--s4);
+    }
+    .override-menu h3 {
+      margin: 0; font-family: var(--mono); font-size: 10px; letter-spacing: 0.12em;
+      text-transform: uppercase; color: var(--quench);
+    }
+    .ov-row { display: grid; gap: 6px; }
+    .ov-row > .ov-label {
+      font-family: var(--mono); font-size: 10px; letter-spacing: 0.08em;
+      text-transform: uppercase; color: var(--mute);
+    }
+    .ov-row select, .ov-row input[type="text"] {
+      width: 100%; color: var(--text); background: var(--panel); border: 1px solid var(--edge-2);
+      border-radius: var(--r); padding: 7px 9px; font: inherit; font-size: 13px;
+    }
+    .ov-row select:focus-visible, .ov-row input:focus-visible { border-color: var(--quench); outline: none; }
+    .ov-assign { display: flex; gap: 6px; }
+    .ov-assign input { flex: 1; min-width: 0; }
+    .ov-assign button {
+      font: inherit; font-size: 11px; font-weight: 700; letter-spacing: 0.04em;
+      color: var(--quench); background: transparent; border: 1px solid rgba(91,184,176,0.6);
+      border-radius: var(--r); padding: 0 12px; cursor: pointer; white-space: nowrap;
+    }
+    .ov-assign button:hover, .ov-assign button:focus-visible { background: var(--quench-dim); outline: none; }
+    .assignee-chip {
+      font-family: var(--mono); font-size: 10px; letter-spacing: 0.03em;
+      padding: 2px 8px; border-radius: 999px; border: 1px solid var(--edge-2); color: var(--text-2);
+    }
+    .assignee-chip.unassigned { color: var(--mute); border-style: dashed; }
+
+    /* ---- Audit / evidence timeline ---- */
+    .timeline { list-style: none; margin: 0; padding: 0; display: grid; position: relative; }
+    .timeline::before {
+      content: ""; position: absolute; left: 6px; top: 8px; bottom: 12px; width: 1px; background: var(--edge-2);
+    }
+    .tl-item { position: relative; padding: 5px 0 11px 26px; }
+    .tl-item:last-child { padding-bottom: 2px; }
+    .tl-dot {
+      position: absolute; left: 2px; top: 9px; width: 9px; height: 9px; border-radius: 50%;
+      background: var(--edge-2); border: 2px solid var(--panel); box-sizing: content-box;
+    }
+    .tl-item.actor-system .tl-dot { background: var(--mute); }
+    .tl-item.actor-ai .tl-dot { background: var(--high); }
+    .tl-item.actor-operator .tl-dot { background: var(--quench); box-shadow: 0 0 8px var(--quench); }
+    .tl-head { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+    .tl-time { font-family: var(--mono); font-size: 11px; color: var(--text-2); }
+    .tl-actor {
+      font-family: var(--mono); font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase;
+      padding: 1px 6px; border-radius: 999px; border: 1px solid var(--edge-2); color: var(--mute);
+    }
+    .tl-item.actor-ai .tl-actor { color: var(--high); border-color: rgba(255,157,46,0.4); }
+    .tl-item.actor-operator .tl-actor { color: var(--quench); border-color: rgba(91,184,176,0.5); }
+    .tl-summary { color: var(--text); font-size: 13px; margin-top: 1px; }
+    .tl-detail { color: var(--mute); font-size: 11px; font-family: var(--mono); margin-top: 2px; }
+
     @media (prefers-reduced-motion: reduce) {
       .sk-line::after, .sk-pill::after { animation: none; }
       .logo .spark { animation: none; }
@@ -534,44 +621,52 @@
        shape) guarantees the console always renders something real-looking. */
     const SAMPLE_ISSUES = [
       { id: "gh_142", source: "github", external_id: "142", priority: "critical", status: "triaged",
+        source_account: "cli/cli", assignee: "alex", created_at: "2026-06-27T10:02:00Z",
         related_ids: ["iss_003"], linked_prs: [],
         title: "Panic on `gh pr create` when repo has no upstream remote",
         body: "Running `gh pr create` in a freshly cloned fork with no `upstream` configured crashes with a nil pointer dereference instead of a helpful error.\n\npanic: runtime error: invalid memory address or nil pointer dereference",
         repro_steps: "- Fork a repo and clone your fork\n- Do NOT add an `upstream` remote\n- Run `gh pr create`\n- Observe the panic",
         triage_reason: "A nil-pointer panic on a common `gh pr create` path crashes the CLI outright with no workaround, so it blocks core daily use." },
       { id: "iss_003", source: "slack", external_id: null, priority: "high", status: "triaged",
+        source_account: "#eng-help", created_at: "2026-06-27T09:48:00Z",
         related_ids: ["gh_142"], linked_prs: [],
         title: "gh pr create just crashes if origin isn't set up right",
         body: "from #eng-help: \"hey is anyone else seeing `gh pr create` straight up crash? it dies with some go panic about a nil pointer. no upstream remote on my side.\"",
         repro_steps: "- Clone a fork without an upstream remote\n- Run `gh pr create`\n- Crash instead of a guided prompt" },
-      { id: "gh_158", source: "github", external_id: "158", priority: "critical", status: "triaged",
+      { id: "gh_158", source: "github", external_id: "158", priority: "critical", status: "investigating",
+        source_account: "cli/cli", assignee: "sam", created_at: "2026-06-27T10:05:00Z",
         related_ids: ["iss_007"], linked_prs: [],
         title: "Auth token not refreshed — 401 after SSO session expiry",
         body: "After my org's SSO session expires (~8h), every `gh` command returns `HTTP 401: Bad credentials`. The stored token is never refreshed and there is no prompt to re-authenticate.",
         repro_steps: "- `gh auth login` with an SSO-enforced org\n- Wait ~8 hours for the session to expire\n- Run any command\n- Persistent `HTTP 401: Bad credentials`",
         triage_reason: "Every command fails for SSO-org users once the session expires, with no auto-refresh — a broad, recurring blocker for enterprise users." },
       { id: "iss_007", source: "email", external_id: null, priority: "high", status: "triaged",
+        source_account: "support@", created_at: "2026-06-27T09:30:00Z",
         related_ids: ["gh_158"], linked_prs: [],
         title: "Getting 401 errors after being logged in for a few hours",
         body: "Forwarded from support@: \"I log in fine in the morning but by mid-afternoon every command fails with a 401. Logging in again fixes it. We use Okta SSO.\"",
         repro_steps: "- Authenticate in the morning via Okta SSO\n- Use the CLI normally\n- Commands fail with 401 until re-login" },
       { id: "gh_175", source: "github", external_id: "175", priority: "critical", status: "triaged",
+        source_account: "cli/cli", created_at: "2026-06-27T08:15:00Z",
         related_ids: [], linked_prs: [],
         title: "Data loss: `gh gist edit` silently truncates files larger than 1MB",
         body: "Editing a gist whose file is >1MB through `gh gist edit` saves a truncated version, silently discarding everything past ~1MB. No warning.",
         repro_steps: "- Create a gist with a file >1MB\n- `gh gist edit <id>` and save\n- The remote file is truncated to ~1MB",
         triage_reason: "Silent data loss past ~1MB with no warning is the worst failure class — users lose content without knowing." },
       { id: "gh_171", source: "github", external_id: "171", priority: "high", status: "triaged",
+        source_account: "cli/cli", created_at: "2026-06-26T16:40:00Z",
         related_ids: ["iss_011"], linked_prs: [],
         title: "`gh repo clone` hangs indefinitely on large repos behind a corporate proxy",
         body: "Cloning a >1GB repo through our corporate HTTPS proxy hangs forever — no progress, no timeout. Plain `git clone` works. Looks like the CLI isn't honoring `HTTPS_PROXY`.",
         repro_steps: "- Set `HTTPS_PROXY` to a corporate proxy\n- `gh repo clone owner/large-repo`\n- Hangs with no output" },
       { id: "iss_011", source: "slack", external_id: null, priority: "normal", status: "triaged",
+        source_account: "#it-support", created_at: "2026-06-26T16:20:00Z",
         related_ids: ["gh_171"], linked_prs: [],
         title: "clone freezes forever on the corp proxy",
         body: "from #it-support: \"anyone got `gh repo clone` working on the VPN/proxy? mine just freezes, no error, no progress bar. regular git clone is fine.\"",
         repro_steps: "- On corporate VPN/proxy\n- `gh repo clone` a moderately large repo\n- Hangs with no feedback" },
       { id: "gh_180", source: "github", external_id: "180", priority: "low", status: "triaged",
+        source_account: "cli/cli", created_at: "2026-06-25T11:00:00Z",
         related_ids: [], linked_prs: [],
         title: "Autocompletion script for zsh emits a deprecation warning on macOS",
         body: "`eval \"$(gh completion -s zsh)\"` prints `compdef: function definition file not found` warnings on macOS 14. Functional but noisy.",
@@ -722,6 +817,49 @@
         }
         return true;  // mock/seed/sample — optimistic local update
       },
+
+      // Operator override: priority. Live mode goes through the granted
+      // `set_priority` Function (validates + logs a priority_changed event).
+      async setPriority(issueId, priority) {
+        if (this.mode === "live" && this.client && this.client.functions) {
+          const res = await this.client.functions.run("set_priority", { input: { issue_id: issueId, priority: priority } });
+          const out = (res && (res.output_data || res.output || res.result)) || res || {};
+          return out.ok !== false;
+        }
+        return true;
+      },
+
+      // Operator override: assignee (empty string clears to Unassigned). Live mode
+      // goes through the granted `set_assignee` Function (logs an assignee_changed event).
+      async setAssignee(issueId, assignee) {
+        if (this.mode === "live" && this.client && this.client.functions) {
+          const res = await this.client.functions.run("set_assignee", { input: { issue_id: issueId, assignee: assignee || "" } });
+          const out = (res && (res.output_data || res.output || res.result)) || res || {};
+          return out.ok !== false;
+        }
+        return true;
+      },
+
+      // Read the audit/evidence trail for one issue. Live mode lists the `events`
+      // Table and filters to this issue (sorted by `ts`); returns null in other
+      // modes (or when the live table has no rows yet) so the caller synthesizes
+      // the trail from the issue's own fields — the timeline always renders.
+      async listEvents(issueId) {
+        if (this.mode === "live" && this.client && this.client.records) {
+          try {
+            const res = await this.client.records.list("events", { limit: 500 });
+            const items = (res && res.items) || res || [];
+            const rows = items.map(function (r) {
+              return r && r.payload && r.kind === undefined
+                ? Object.assign({ id: r.id }, r.payload) : r;
+            }).filter(function (e) { return e && e.issue_id === issueId; });
+            if (!rows.length) return null;
+            rows.sort(function (a, b) { return String(a.ts || a.created_at || "").localeCompare(String(b.ts || b.created_at || "")); });
+            return rows;
+          } catch (err) { return null; }
+        }
+        return null;
+      },
     };
 
     function escapeHtml(s) {
@@ -742,8 +880,10 @@
     const AppState = {
       issues: [],
       selectedId: null,
-      filters: { priority: "all", source: "all", text: "" },
+      filters: { priority: "all", source: "all", account: "all", text: "" },
       investigations: {},
+      events: {},        // issueId -> [event] (live-fetched or synthesized; operator edits appended)
+      menuOpen: false,   // the detail three-dot override menu
     };
 
     function priorityRank(p) {
@@ -762,12 +902,14 @@
       return issues.filter(function (issue) {
         const priority = issue.priority || "untriaged";
         const source = issue.source || "unknown";
+        const account = issue.source_account || "";
         const matchesText = !q ||
           String(issue.title || "").toLowerCase().includes(q) ||
           String(issue.id || "").toLowerCase().includes(q) ||
           String(issue.body || "").toLowerCase().includes(q);
         return (AppState.filters.priority === "all" || AppState.filters.priority === priority) &&
           (AppState.filters.source === "all" || AppState.filters.source === source) &&
+          (AppState.filters.account === "all" || AppState.filters.account === account) &&
           matchesText;
       });
     }
@@ -807,6 +949,7 @@
             '<div class="meta">' +
               '<span class="id">' + escapeHtml(issue.id) + "</span>" +
               sourceBadge(issue.source) +
+              (issue.source_account ? '<span class="acct">' + escapeHtml(issue.source_account) + "</span>" : "") +
               statusBadge(issue) +
               relatedBadge(issue) +
             "</div>" +
@@ -817,12 +960,14 @@
     }
 
     function renderQueue(issues) {
-      // Render the filters bar once, then fill a stable list container. Filter
-      // changes update only the list (updateQueueList) so the search input keeps
-      // focus + caret while you type.
+      // Stable containers: a switcher (source tabs + account), a filter bar
+      // (search/priority/clear), and the list. Switching source re-renders only the
+      // switcher; typing/filtering updates only the list — so search keeps focus + caret.
       const main = document.getElementById("main");
-      main.innerHTML = renderFilters() + '<div id="queue-list"></div>';
-      bindFilters();
+      main.innerHTML =
+        '<div id="switcher-wrap"></div>' + renderFilterBar() + '<div id="queue-list"></div>';
+      updateSwitcher();
+      bindFilterBar();
       updateQueueList();
     }
 
@@ -845,9 +990,85 @@
         (value === current ? " selected" : "") + ">" + escapeHtml(label) + "</option>";
     }
 
-    function renderFilters() {
-      const p = AppState.filters.priority;
+    // ---- Source / account switcher (multi-repo · multi-workspace · multi-mailbox) ----
+    const SOURCE_SWITCHER = [
+      { key: "all", label: "All" },
+      { key: "github", label: "GitHub" },
+      { key: "slack", label: "Slack" },
+      { key: "email", label: "Email" },
+    ];
+    const ACCOUNT_NOUN = { github: "repo", slack: "channel", email: "mailbox", all: "source" };
+
+    function sourceCount(source) {
+      return source === "all"
+        ? AppState.issues.length
+        : AppState.issues.filter(function (i) { return (i.source || "unknown") === source; }).length;
+    }
+
+    // Distinct accounts (repos / channels / mailboxes) for the chosen source.
+    function accountsForSource(source) {
+      const seen = {};
+      AppState.issues.forEach(function (i) {
+        if (source !== "all" && (i.source || "unknown") !== source) return;
+        if (i.source_account) seen[i.source_account] = true;
+      });
+      return Object.keys(seen).sort();
+    }
+
+    function renderAccountSelect() {
+      const accounts = accountsForSource(AppState.filters.source);
+      if (!accounts.length) return "";   // no account dimension to switch
+      const cur = AppState.filters.account;
+      const noun = ACCOUNT_NOUN[AppState.filters.source] || "source";
+      const opts = [selectOption("all", "All " + noun + "s", cur)]
+        .concat(accounts.map(function (a) { return selectOption(a, a, cur); }))
+        .join("");
+      return (
+        '<span class="switcher-label">' + escapeHtml(noun) + "</span>" +
+        '<select id="account-filter" class="account-select" aria-label="Account">' + opts + "</select>"
+      );
+    }
+
+    function renderSwitcher() {
       const s = AppState.filters.source;
+      const tabs = SOURCE_SWITCHER.map(function (t) {
+        const active = t.key === s ? " active" : "";
+        return '<button type="button" class="src-tab' + active + '" data-source="' + t.key + '" ' +
+          'role="tab" aria-selected="' + (t.key === s) + '">' +
+          escapeHtml(t.label) + '<span class="tab-count">' + sourceCount(t.key) + "</span></button>";
+      }).join("");
+      return (
+        '<div class="switcher" aria-label="Source switcher">' +
+          '<div class="src-tabs" role="tablist">' + tabs + "</div>" +
+          renderAccountSelect() +
+        "</div>"
+      );
+    }
+
+    // Re-render just the switcher (active tab + account options) and (re)bind it.
+    function updateSwitcher() {
+      const wrap = document.getElementById("switcher-wrap");
+      if (!wrap) return;
+      wrap.innerHTML = renderSwitcher();
+      wrap.querySelectorAll(".src-tab[data-source]").forEach(function (tab) {
+        tab.addEventListener("click", function () {
+          AppState.filters.source = tab.getAttribute("data-source");
+          AppState.filters.account = "all";   // a source switch resets the account
+          updateSwitcher();
+          updateQueueList();
+        });
+      });
+      const account = document.getElementById("account-filter");
+      if (account) {
+        account.addEventListener("change", function () {
+          AppState.filters.account = account.value;
+          updateQueueList();
+        });
+      }
+    }
+
+    function renderFilterBar() {
+      const p = AppState.filters.priority;
       return (
         '<div class="filters" aria-label="Queue filters">' +
           '<label class="filter-group search-group">' +
@@ -864,31 +1085,17 @@
               selectOption("untriaged", "Untriaged", p) +
             "</select>" +
           "</label>" +
-          '<label class="filter-group">Source ' +
-            '<select id="source-filter">' +
-              selectOption("all", "All", s) +
-              selectOption("github", "GitHub", s) +
-              selectOption("slack", "Slack", s) +
-              selectOption("email", "Email", s) +
-            "</select>" +
-          "</label>" +
           '<button type="button" class="clear-btn" id="clear-filters">Clear</button>' +
         "</div>"
       );
     }
 
-    function bindFilters() {
+    function bindFilterBar() {
       const priority = document.getElementById("priority-filter");
-      const source = document.getElementById("source-filter");
       const search = document.getElementById("search-filter");
       const clear = document.getElementById("clear-filters");
-      // Update only the list (not the filters bar) so controls keep focus/caret.
       priority.addEventListener("change", function () {
         AppState.filters.priority = priority.value;
-        updateQueueList();
-      });
-      source.addEventListener("change", function () {
-        AppState.filters.source = source.value;
         updateQueueList();
       });
       search.addEventListener("input", function () {
@@ -896,12 +1103,10 @@
         updateQueueList();
       });
       clear.addEventListener("click", function () {
-        AppState.filters.priority = "all";
-        AppState.filters.source = "all";
-        AppState.filters.text = "";
+        AppState.filters = { priority: "all", source: "all", account: "all", text: "" };
         priority.value = "all";
-        source.value = "all";
         search.value = "";
+        updateSwitcher();    // reset tabs + account select
         updateQueueList();
       });
     }
@@ -1094,13 +1299,218 @@
       "</div>";
     }
 
-    // Close the loop: resolve an open issue, or re-open a resolved one. The
-    // button id is read by renderDetail's handler, which calls changeStatus.
-    function renderStatusActions(issue) {
-      if (issue.status === "resolved") {
-        return '<button type="button" class="status-btn reopen" id="reopen-issue" data-status="triaged">Re-open</button>';
+    // ---- Audit / evidence timeline ----
+    const TL_ACTOR_LABEL = { system: "System", ai: "AI", operator: "Operator" };
+    const PRIORITY_LABEL = { critical: "Critical", high: "High", normal: "Normal", low: "Low" };
+
+    function formatEventTime(ts) {
+      const d = ts ? new Date(ts) : null;
+      if (!d || isNaN(d.getTime())) return "";
+      return String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0");
+    }
+
+    // Synthesize a trail from the issue's own fields — used in mock/seed/sample and
+    // as a fallback in live mode before/when the events Table has no rows for an
+    // issue. Mirrors scripts/backfill_events.py so live + synthesized read alike.
+    function synthTimeline(issue) {
+      const base = issue.created_at ? new Date(issue.created_at) : new Date(Date.now() - 4 * 60000);
+      const at = function (sec) { return new Date(base.getTime() + sec * 1000).toISOString(); };
+      const label = SOURCE_LABELS[issue.source] || (issue.source || "Report");
+      const acct = issue.source_account;
+      const events = [];
+      events.push({
+        kind: "ingested", actor: "system", ts: at(0),
+        summary: (issue.source === "github" && issue.external_id
+          ? "GitHub issue #" + issue.external_id + " ingested"
+          : label + " report ingested") + (acct ? " from " + acct : ""),
+      });
+      if (issue.priority) {
+        events.push({
+          kind: "triaged", actor: "ai", ts: at(60),
+          summary: "AI triaged as " + (PRIORITY_LABEL[issue.priority] || issue.priority),
+          detail: issue.triage_reason || "",
+        });
       }
-      return '<button type="button" class="status-btn resolve" id="resolve-issue" data-status="resolved">Mark resolved</button>';
+      const rel = Array.isArray(issue.related_ids) ? issue.related_ids.length : 0;
+      if (rel) {
+        events.push({
+          kind: "linked", actor: "ai", ts: at(120),
+          summary: "Linked " + rel + " related report" + (rel === 1 ? "" : "s"),
+        });
+      }
+      const inv = AppState.investigations[issue.id];
+      if (inv && inv.status === "complete" && inv.hypothesis) {
+        events.push({
+          kind: "investigated", actor: "ai", ts: at(180),
+          summary: (inv.proposed_fix && inv.proposed_fix.diff)
+            ? "Investigation found source evidence + proposed a fix"
+            : "Investigation synthesized a root-cause hypothesis",
+        });
+      }
+      return events;
+    }
+
+    function timelineFor(issue) {
+      return AppState.events[issue.id] || synthTimeline(issue);
+    }
+
+    function eventDetailText(ev) {
+      if (!ev.detail) return "";
+      if (typeof ev.detail !== "string") return "";
+      let parsed = null;
+      try { parsed = JSON.parse(ev.detail); } catch (e) { return ev.detail; }
+      if (parsed && (parsed.from !== undefined || parsed.to !== undefined)) {
+        return (parsed.from == null ? "—" : parsed.from) + " → " + (parsed.to == null ? "—" : parsed.to);
+      }
+      if (parsed && parsed.reason) return parsed.reason;
+      return "";
+    }
+
+    function renderTimeline(issue) {
+      const events = timelineFor(issue).slice().sort(function (a, b) {
+        return String(a.ts || a.created_at || "").localeCompare(String(b.ts || b.created_at || ""));
+      });
+      if (!events.length) return '<p class="detail-empty">No activity recorded yet.</p>';
+      return (
+        '<ul class="timeline">' +
+        events.map(function (ev) {
+          const actor = TL_ACTOR_LABEL[ev.actor] ? ev.actor : "system";
+          const time = formatEventTime(ev.ts || ev.created_at);
+          const detail = eventDetailText(ev);
+          return (
+            '<li class="tl-item actor-' + actor + '">' +
+              '<span class="tl-dot"></span>' +
+              '<div class="tl-head">' +
+                (time ? '<span class="tl-time">' + escapeHtml(time) + "</span>" : "") +
+                '<span class="tl-actor">' + escapeHtml(TL_ACTOR_LABEL[actor]) + "</span>" +
+              "</div>" +
+              '<div class="tl-summary">' + escapeHtml(ev.summary || "") + "</div>" +
+              (detail ? '<div class="tl-detail">' + escapeHtml(detail) + "</div>" : "") +
+            "</li>"
+          );
+        }).join("") +
+        "</ul>"
+      );
+    }
+
+    // Load the live trail (async); falls back to synthesis. Caches on AppState and
+    // re-renders the detail if the issue is still open.
+    async function loadTimeline(issue) {
+      if (AppState.events[issue.id]) return;
+      let events = null;
+      try { events = await DataSource.listEvents(issue.id); } catch (e) { events = null; }
+      AppState.events[issue.id] = (events && events.length) ? events : synthTimeline(issue);
+      if (AppState.selectedId === issue.id) renderDetail(issue);
+    }
+
+    // Append an operator event so the timeline updates immediately (the backend
+    // logged its own copy through the override Function).
+    function appendOperatorEvent(issueId, kind, summary, detail) {
+      const issue = findIssue(issueId);
+      const list = AppState.events[issueId] || (issue ? synthTimeline(issue) : []);
+      list.push({ kind: kind, actor: "operator", ts: new Date().toISOString(),
+        summary: summary, detail: detail ? JSON.stringify(detail) : null });
+      AppState.events[issueId] = list;
+    }
+
+    // ---- Human override controls — the three-dot menu (hidden until an issue is open) ----
+    function renderOverrideMenu(issue) {
+      if (!AppState.menuOpen) return "";
+      const pr = issue.priority || "";
+      const st = issue.status || "new";
+      const prOpt = function (v) {
+        return '<option value="' + v + '"' + (v === pr ? " selected" : "") + ">" + (PRIORITY_LABEL[v] || v) + "</option>";
+      };
+      const stOpt = function (v) {
+        return '<option value="' + v + '"' + (v === st ? " selected" : "") + ">" + (STATUS_LABELS[v] || v) + "</option>";
+      };
+      return (
+        '<div class="override-menu" role="menu" aria-label="Override controls">' +
+          "<h3>Override</h3>" +
+          '<div class="ov-row">' +
+            '<span class="ov-label">Priority</span>' +
+            '<select id="ov-priority" aria-label="Set priority">' +
+              ["critical", "high", "normal", "low"].map(prOpt).join("") +
+            "</select>" +
+          "</div>" +
+          '<div class="ov-row">' +
+            '<span class="ov-label">Assignee</span>' +
+            '<div class="ov-assign">' +
+              '<input type="text" id="ov-assignee" placeholder="Unassigned" value="' + escapeHtml(issue.assignee || "") + '" aria-label="Set assignee" />' +
+              '<button type="button" id="ov-assign-btn">Assign</button>' +
+            "</div>" +
+          "</div>" +
+          '<div class="ov-row">' +
+            '<span class="ov-label">Status</span>' +
+            '<select id="ov-status" aria-label="Set status">' +
+              ["new", "triaged", "investigating", "resolved"].map(stOpt).join("") +
+            "</select>" +
+          "</div>" +
+        "</div>"
+      );
+    }
+
+    // Each override: optimistic local update + immediate operator timeline event +
+    // re-render, then the live write through the granted Function (revert on failure).
+    async function overridePriority(issueId, priority) {
+      const issue = findIssue(issueId);
+      if (!issue || priority === (issue.priority || "")) return;
+      const prev = issue.priority || null;
+      issue.priority = priority; issue.updated_at = new Date().toISOString();
+      appendOperatorEvent(issueId, "priority_changed",
+        "Priority changed to " + (PRIORITY_LABEL[priority] || priority), { from: prev, to: priority });
+      renderDetail(issue);
+      const ok = await DataSource.setPriority(issueId, priority);
+      if (!ok) { issue.priority = prev; AppState.events[issueId].pop(); renderDetail(issue); }
+    }
+
+    async function overrideAssignee(issueId, raw) {
+      const issue = findIssue(issueId);
+      if (!issue) return;
+      const prev = issue.assignee || null;
+      const next = (raw || "").trim() || null;
+      AppState.menuOpen = false;
+      if (next === prev) { renderDetail(issue); return; }
+      issue.assignee = next; issue.updated_at = new Date().toISOString();
+      appendOperatorEvent(issueId, "assignee_changed",
+        next ? "Assigned to " + next : "Unassigned", { from: prev, to: next });
+      renderDetail(issue);
+      const ok = await DataSource.setAssignee(issueId, next || "");
+      if (!ok) { issue.assignee = prev; AppState.events[issueId].pop(); renderDetail(issue); }
+    }
+
+    async function overrideStatus(issueId, status) {
+      const issue = findIssue(issueId);
+      if (!issue || status === (issue.status || "new")) return;
+      const prev = issue.status || "new";
+      issue.status = status; issue.updated_at = new Date().toISOString();
+      appendOperatorEvent(issueId, "status_changed",
+        "Status changed to " + (STATUS_LABELS[status] || status), { from: prev, to: status });
+      renderDetail(issue);
+      const ok = await DataSource.setStatus(issueId, status);
+      if (!ok) { issue.status = prev; AppState.events[issueId].pop(); renderDetail(issue); }
+    }
+
+    // Dismiss-listeners for the open override menu. Stored at module scope and
+    // cleared on every render so they never accumulate across re-renders.
+    var _menuDismiss = null;
+    function clearMenuDismiss() { if (_menuDismiss) { _menuDismiss(); _menuDismiss = null; } }
+    function installMenuDismiss(issue) {
+      const onDoc = function () {
+        AppState.menuOpen = false;
+        clearMenuDismiss();
+        if (AppState.selectedId === issue.id) renderDetail(issue);
+      };
+      const onKey = function (e) { if (e.key === "Escape") onDoc(); };
+      // Defer so the click that opened the menu doesn't immediately close it.
+      setTimeout(function () {
+        document.addEventListener("click", onDoc);
+        document.addEventListener("keydown", onKey);
+      }, 0);
+      _menuDismiss = function () {
+        document.removeEventListener("click", onDoc);
+        document.removeEventListener("keydown", onKey);
+      };
     }
 
     function renderDetail(issue) {
@@ -1110,15 +1520,27 @@
       const repro = issue.repro_steps
         ? '<p class="detail-text">' + escapeHtml(issue.repro_steps) + "</p>"
         : '<p class="detail-empty">No repro steps captured yet.</p>';
+      clearMenuDismiss();
       document.getElementById("main").innerHTML =
-        '<div class="toolbar"><button type="button" class="back-btn" id="back-to-queue">&larr; Queue</button></div>' +
+        '<div class="toolbar">' +
+          '<button type="button" class="back-btn" id="back-to-queue">&larr; Queue</button>' +
+          '<div class="detail-menu-wrap">' +
+            '<button type="button" class="kebab" id="kebab-btn" aria-haspopup="true" ' +
+              'aria-expanded="' + (AppState.menuOpen ? "true" : "false") + '" ' +
+              'aria-label="Issue controls" title="Override controls">⋯</button>' +
+            renderOverrideMenu(issue) +
+          "</div>" +
+        "</div>" +
         '<article class="detail p-' + key + '">' +
           "<h1>" + escapeHtml(issue.title) + "</h1>" +
           '<div class="meta">' +
             sourceBadge(issue.source) +
+            (issue.source_account ? '<span class="acct">' + escapeHtml(issue.source_account) + "</span>" : "") +
             '<span class="id">' + escapeHtml(issue.id) + "</span>" +
             '<span class="badge p-' + key + '">' + escapeHtml(key) + "</span>" +
             statusBadge(issue) +
+            '<span class="assignee-chip' + (issue.assignee ? "" : " unassigned") + '">' +
+              escapeHtml(issue.assignee ? "@" + issue.assignee : "Unassigned") + "</span>" +
           "</div>" +
           renderTriageReason(issue) +
           '<div class="detail-actions">' +
@@ -1126,7 +1548,6 @@
               (investigating ? " disabled" : "") + ">" +
               (investigating ? "Investigating" : "Investigate") +
             "</button>" +
-            renderStatusActions(issue) +
           "</div>" +
           renderInvestigationStatus(investigation) +
           '<section class="detail-section">' +
@@ -1138,6 +1559,10 @@
             repro +
           "</section>" +
           '<section class="detail-section">' +
+            "<h2>Timeline</h2>" +
+            renderTimeline(issue) +
+          "</section>" +
+          '<section class="detail-section">' +
             "<h2>Related reports</h2>" +
             renderRelatedList(issue) +
           "</section>" +
@@ -1147,16 +1572,38 @@
         "</article>";
       document.getElementById("back-to-queue").addEventListener("click", function () {
         AppState.selectedId = null;
+        AppState.menuOpen = false;
+        clearMenuDismiss();
         renderQueue(AppState.issues);
       });
       document.getElementById("investigate-issue").addEventListener("click", function () {
         startInvestigation(issue.id);
       });
-      const statusBtn = document.getElementById("resolve-issue") || document.getElementById("reopen-issue");
-      if (statusBtn) {
-        statusBtn.addEventListener("click", function () {
-          changeStatus(issue.id, statusBtn.getAttribute("data-status"), statusBtn);
+      // Three-dot override menu: toggle + the three controls.
+      const kebab = document.getElementById("kebab-btn");
+      if (kebab) {
+        kebab.addEventListener("click", function (e) {
+          e.stopPropagation();
+          AppState.menuOpen = !AppState.menuOpen;
+          renderDetail(issue);
         });
+      }
+      const ovPriority = document.getElementById("ov-priority");
+      if (ovPriority) ovPriority.addEventListener("change", function () { overridePriority(issue.id, ovPriority.value); });
+      const ovStatus = document.getElementById("ov-status");
+      if (ovStatus) ovStatus.addEventListener("change", function () { overrideStatus(issue.id, ovStatus.value); });
+      const ovAssignInput = document.getElementById("ov-assignee");
+      const ovAssignBtn = document.getElementById("ov-assign-btn");
+      if (ovAssignInput && ovAssignBtn) {
+        ovAssignBtn.addEventListener("click", function () { overrideAssignee(issue.id, ovAssignInput.value); });
+        ovAssignInput.addEventListener("keydown", function (e) {
+          if (e.key === "Enter") { e.preventDefault(); overrideAssignee(issue.id, ovAssignInput.value); }
+        });
+      }
+      if (AppState.menuOpen) {
+        const wrap = document.querySelector(".detail-menu-wrap");
+        if (wrap) wrap.addEventListener("click", function (e) { e.stopPropagation(); });
+        installMenuDismiss(issue);
       }
       const copyBtn = document.getElementById("copy-fix");
       if (copyBtn) {
@@ -1220,35 +1667,16 @@
       renderDetail(issue);
     }
 
-    // Operator-driven status change (mark resolved / re-open). Writes through the
-    // granted set_status Function, then updates the in-memory row so the queue and
-    // detail reflect the new state without a full reload.
-    async function changeStatus(issueId, status, btn) {
-      const issue = findIssue(issueId);
-      if (!issue) return;
-      const prevLabel = btn ? btn.textContent : "";
-      if (btn) { btn.disabled = true; btn.textContent = "Saving…"; }
-      try {
-        const ok = await DataSource.setStatus(issueId, status);
-        if (ok) {
-          issue.status = status;
-          issue.updated_at = new Date().toISOString();
-        } else if (btn) {
-          btn.disabled = false; btn.textContent = prevLabel;
-          return;
-        }
-      } catch (err) {
-        if (btn) { btn.disabled = false; btn.textContent = prevLabel; }
-        return;
-      }
-      renderDetail(issue);
-    }
-
     function selectIssue(id) {
       const issue = findIssue(id);
       if (!issue) return;
       AppState.selectedId = id;
+      AppState.menuOpen = false;
+      clearMenuDismiss();
       renderDetail(issue);
+      // Pull the real audit trail (live) in the background; synthesis already
+      // rendered above, so this only refines it once the events Table answers.
+      loadTimeline(issue);
     }
 
     function renderLoading() {
