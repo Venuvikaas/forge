@@ -17,6 +17,7 @@ telling the other person.
 | `body` | text | full report text (also written to Files) |
 | `priority` | enum \| null | `critical` \| `high` \| `normal` \| `low`; null until triaged |
 | `repro_steps` | text (markdown) \| null | bullet list; null until triaged |
+| `triage_reason` | text \| null | one-sentence AI triage rationale (the `reason` from §3); null until triaged |
 | `status` | enum | `new` \| `triaged` \| `investigating` \| `resolved` |
 | `related_ids` | string[] | ids of confirmed duplicates / related issues. No DB default — writers send `[]`. |
 | `linked_prs` | string[] | PR identifiers that fix it (optional). No DB default — writers send `[]`. |
@@ -45,7 +46,9 @@ telling the other person.
   "reason": "one short sentence — evidence-based, NO fabricated percentages"
 }
 ```
-`normalize_priority` Function validates this → coerces unknown/missing priority to `normal`.
+`normalize_priority` Function validates this → coerces unknown/missing priority to `normal`,
+and persists `reason` to the `issues.triage_reason` column so the App can show *why* the AI
+chose the priority.
 
 ## 4. Duplicate confirmation — agent output
 

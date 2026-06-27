@@ -50,10 +50,13 @@ async def normalize_priority(ctx, data: NormalizePriorityInput) -> NormalizePrio
     priority, coerced = _coerce_priority(data.priority)
 
     # Write only what triage produces; leave other fields untouched. repro_steps
-    # is written only when the agent supplied it, so a re-run never blanks it.
+    # and triage_reason are written only when the agent supplied them, so a re-run
+    # never blanks them.
     patch: dict = {"priority": priority, "status": "triaged"}
     if data.repro_steps is not None:
         patch["repro_steps"] = data.repro_steps
+    if data.reason is not None:
+        patch["triage_reason"] = data.reason
 
     pod.table("issues").update(data.issue_id, patch)
 

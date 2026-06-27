@@ -40,6 +40,8 @@ ISSUES_SCHEMA: dict = {
          "description": "null until triaged"},
         {"name": "repro_steps", "type": "TEXT",
          "description": "markdown bullet list; null until triaged"},
+        {"name": "triage_reason", "type": "TEXT",
+         "description": "one-sentence AI triage rationale (contract §3 'reason'); null until triaged"},
         {"name": "status", "type": "ENUM", "options": STATUSES,
          "required": True, "default": "new"},
         # JSON column defaults must be scalar literals (the API rejects [] as a

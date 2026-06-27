@@ -205,6 +205,15 @@ forge/
 
 ---
 
+## ☐ POST-D5 — Polish enhancements (June 27, after the EOD-D5 checkpoint)
+
+> Small, high-signal additions surfaced while reviewing the loop. Each is one box → one commit.
+
+- [x] **[A+B]** Persist + show the AI triage **reason** (make the judgment visible, not just the verdict). — commit: `feat(pod): persist triage reason + show in app` _(added a nullable `triage_reason` TEXT column to the live `issues` table via `add_column` — additive, no recreate (`scripts/add_triage_reason_column.py`, idempotent); `normalize_priority` now persists the agent's `reason` (already in the contract §3 output) to it; contract §1/§3 updated. App detail view renders an "AI triage" rationale callout under the priority badge, tinted to the priority heat. `scripts/backfill_triage_reason.py` recovers reasons for already-triaged rows — replays `logs/triage/<id>.json` offline (survives the degraded backend) and falls back to a read-only agent run, writing **only** `triage_reason` so curated priority/repro are untouched; 7 log-backed rows backfilled live, rest fill on next triage / backend recovery.)_
+- [ ] **[A+B]** Status surfacing + "mark resolved" loop (new → triaged → investigating → resolved). — commit: `feat(app): status + mark-resolved loop`
+
+---
+
 ## ☐ DAY 6 — June 30 · Submit (🔴 do together)
 
 - [ ] **[A+B]** Final run-through on the curated dataset (twice). — _(no commit; rehearsal)_

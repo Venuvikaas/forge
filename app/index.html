@@ -196,6 +196,27 @@
     .badge.p-low      { color: var(--low);  border-color: var(--edge-2); background: transparent; }
     .badge.p-untriaged{ color: var(--mute); border-style: dashed; }
 
+    /* AI triage rationale — the judgment behind the priority, tinted to its heat */
+    .triage-reason {
+      display: flex; align-items: baseline; gap: var(--s3);
+      margin: var(--s4) 0 var(--s5);
+      padding: var(--s3) var(--s4);
+      border: 1px solid var(--edge-2); border-left-width: 3px;
+      border-radius: var(--r); background: rgba(255,255,255,0.02);
+    }
+    .triage-reason-label {
+      flex-shrink: 0;
+      font-family: var(--mono); font-size: 10px; font-weight: 700;
+      letter-spacing: 0.09em; text-transform: uppercase; color: var(--mute);
+    }
+    .triage-reason-text { color: var(--text-2); font-size: 14px; line-height: 1.5; }
+    .triage-reason.p-critical { border-left-color: var(--crit); }
+    .triage-reason.p-critical .triage-reason-label { color: var(--crit); }
+    .triage-reason.p-high     { border-left-color: var(--high); }
+    .triage-reason.p-high     .triage-reason-label { color: var(--high); }
+    .triage-reason.p-normal   { border-left-color: var(--norm); }
+    .triage-reason.p-low      { border-left-color: var(--low); }
+
     .related-badge {
       font-family: var(--mono); font-size: 10px; letter-spacing: 0.03em;
       padding: 2px 8px; border-radius: 999px;
@@ -487,7 +508,8 @@
         related_ids: ["iss_003"], linked_prs: [],
         title: "Panic on `gh pr create` when repo has no upstream remote",
         body: "Running `gh pr create` in a freshly cloned fork with no `upstream` configured crashes with a nil pointer dereference instead of a helpful error.\n\npanic: runtime error: invalid memory address or nil pointer dereference",
-        repro_steps: "- Fork a repo and clone your fork\n- Do NOT add an `upstream` remote\n- Run `gh pr create`\n- Observe the panic" },
+        repro_steps: "- Fork a repo and clone your fork\n- Do NOT add an `upstream` remote\n- Run `gh pr create`\n- Observe the panic",
+        triage_reason: "A nil-pointer panic on a common `gh pr create` path crashes the CLI outright with no workaround, so it blocks core daily use." },
       { id: "iss_003", source: "slack", external_id: null, priority: "high", status: "triaged",
         related_ids: ["gh_142"], linked_prs: [],
         title: "gh pr create just crashes if origin isn't set up right",
@@ -497,7 +519,8 @@
         related_ids: ["iss_007"], linked_prs: [],
         title: "Auth token not refreshed — 401 after SSO session expiry",
         body: "After my org's SSO session expires (~8h), every `gh` command returns `HTTP 401: Bad credentials`. The stored token is never refreshed and there is no prompt to re-authenticate.",
-        repro_steps: "- `gh auth login` with an SSO-enforced org\n- Wait ~8 hours for the session to expire\n- Run any command\n- Persistent `HTTP 401: Bad credentials`" },
+        repro_steps: "- `gh auth login` with an SSO-enforced org\n- Wait ~8 hours for the session to expire\n- Run any command\n- Persistent `HTTP 401: Bad credentials`",
+        triage_reason: "Every command fails for SSO-org users once the session expires, with no auto-refresh — a broad, recurring blocker for enterprise users." },
       { id: "iss_007", source: "email", external_id: null, priority: "high", status: "triaged",
         related_ids: ["gh_158"], linked_prs: [],
         title: "Getting 401 errors after being logged in for a few hours",
@@ -507,7 +530,8 @@
         related_ids: [], linked_prs: [],
         title: "Data loss: `gh gist edit` silently truncates files larger than 1MB",
         body: "Editing a gist whose file is >1MB through `gh gist edit` saves a truncated version, silently discarding everything past ~1MB. No warning.",
-        repro_steps: "- Create a gist with a file >1MB\n- `gh gist edit <id>` and save\n- The remote file is truncated to ~1MB" },
+        repro_steps: "- Create a gist with a file >1MB\n- `gh gist edit <id>` and save\n- The remote file is truncated to ~1MB",
+        triage_reason: "Silent data loss past ~1MB with no warning is the worst failure class — users lose content without knowing." },
       { id: "gh_171", source: "github", external_id: "171", priority: "high", status: "triaged",
         related_ids: ["iss_011"], linked_prs: [],
         title: "`gh repo clone` hangs indefinitely on large repos behind a corporate proxy",
@@ -1005,6 +1029,19 @@
       );
     }
 
+    // The AI's one-sentence priority rationale (issues.triage_reason). Shown
+    // right under the priority badge so the judgment, not just the verdict, is
+    // visible. Hidden when a row hasn't been triaged or carries no reason yet.
+    function renderTriageReason(issue) {
+      const reason = (issue.triage_reason || "").trim();
+      if (!reason) return "";
+      const key = issue.priority || "untriaged";
+      return '<div class="triage-reason p-' + key + '">' +
+        '<span class="triage-reason-label">AI triage</span>' +
+        '<span class="triage-reason-text">' + escapeHtml(reason) + "</span>" +
+      "</div>";
+    }
+
     function renderDetail(issue) {
       const key = issue.priority || "untriaged";
       const investigation = AppState.investigations[issue.id] || { status: "idle" };
@@ -1021,6 +1058,7 @@
             '<span class="id">' + escapeHtml(issue.id) + "</span>" +
             '<span class="badge p-' + key + '">' + escapeHtml(key) + "</span>" +
           "</div>" +
+          renderTriageReason(issue) +
           '<div class="detail-actions">' +
             '<button type="button" class="investigate-btn" id="investigate-issue"' +
               (investigating ? " disabled" : "") + ">" +
