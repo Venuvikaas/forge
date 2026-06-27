@@ -121,6 +121,14 @@
       padding: 7px 28px 7px 10px; font: inherit; cursor: pointer;
     }
     .filter-group select:focus-visible { border-color: var(--quench); outline: none; }
+    .search-group { flex: 1; min-width: 160px; }
+    .search-group input {
+      width: 100%; color: var(--text); background: var(--panel);
+      border: 1px solid var(--edge-2); border-radius: var(--r);
+      padding: 7px 10px; font: inherit;
+    }
+    .search-group input::placeholder { color: var(--mute); }
+    .search-group input:focus-visible { border-color: var(--quench); outline: none; }
     .clear-btn {
       font: inherit; font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase;
       color: var(--text-2); background: transparent; border: 1px solid var(--edge-2);
@@ -304,13 +312,26 @@
       border: 1px solid var(--edge); border-left: 2px solid rgba(63,185,80,0.55);
       border-radius: var(--r); background: var(--panel-2); overflow: hidden;
     }
+    .fix-head {
+      display: flex; align-items: center; gap: var(--s2);
+      border-bottom: 1px solid var(--edge); background: rgba(255,157,46,0.06);
+      padding-right: 10px;
+    }
     .code-citation {
-      display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+      flex: 1; min-width: 0; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
       font-family: var(--mono); font-size: 12px;
       padding: 10px 12px; color: var(--quench); text-decoration: none;
-      border-bottom: 1px solid var(--edge); background: rgba(255,157,46,0.06);
     }
     .code-citation:hover, .code-citation:focus-visible { text-decoration: underline; outline: none; }
+    .copy-fix {
+      flex: 0 0 auto; font: inherit; font-family: var(--mono); font-size: 11px;
+      color: var(--text-2); background: transparent;
+      border: 1px solid var(--edge-2); border-radius: var(--r);
+      padding: 5px 10px; cursor: pointer; white-space: nowrap;
+      transition: border-color .14s ease, color .14s ease;
+    }
+    .copy-fix:hover, .copy-fix:focus-visible { color: var(--text); border-color: var(--quench); outline: none; }
+    .copy-fix.copied { color: var(--norm); border-color: rgba(63,185,80,0.5); }
     .code-citation .cite-hint {
       margin-left: auto; color: var(--mute); font-size: 10px;
       letter-spacing: .08em; text-transform: uppercase;
@@ -655,7 +676,7 @@
     const AppState = {
       issues: [],
       selectedId: null,
-      filters: { priority: "all", source: "all" },
+      filters: { priority: "all", source: "all", text: "" },
       investigations: {},
     };
 
@@ -671,11 +692,17 @@
     }
 
     function applyFilters(issues) {
+      const q = (AppState.filters.text || "").trim().toLowerCase();
       return issues.filter(function (issue) {
         const priority = issue.priority || "untriaged";
         const source = issue.source || "unknown";
+        const matchesText = !q ||
+          String(issue.title || "").toLowerCase().includes(q) ||
+          String(issue.id || "").toLowerCase().includes(q) ||
+          String(issue.body || "").toLowerCase().includes(q);
         return (AppState.filters.priority === "all" || AppState.filters.priority === priority) &&
-          (AppState.filters.source === "all" || AppState.filters.source === source);
+          (AppState.filters.source === "all" || AppState.filters.source === source) &&
+          matchesText;
       });
     }
 
@@ -714,16 +741,23 @@
     }
 
     function renderQueue(issues) {
-      const filtered = applyFilters(issues);
-      const ordered = sortCriticalFirst(filtered);
+      // Render the filters bar once, then fill a stable list container. Filter
+      // changes update only the list (updateQueueList) so the search input keeps
+      // focus + caret while you type.
       const main = document.getElementById("main");
-      main.innerHTML =
-        renderFilters() +
-        (ordered.length
-          ? '<div class="queue">' + ordered.map(issueCard).join("") + "</div>"
-          : '<div class="state"><div class="glyph">∅</div><h2>No matches</h2><p>Adjust the priority or source filter.</p></div>');
+      main.innerHTML = renderFilters() + '<div id="queue-list"></div>';
       bindFilters();
-      main.querySelectorAll(".card[data-id]").forEach(function (card) {
+      updateQueueList();
+    }
+
+    function updateQueueList() {
+      const list = document.getElementById("queue-list");
+      if (!list) return;
+      const ordered = sortCriticalFirst(applyFilters(AppState.issues));
+      list.innerHTML = ordered.length
+        ? '<div class="queue">' + ordered.map(issueCard).join("") + "</div>"
+        : '<div class="state"><div class="glyph">∅</div><h2>No matches</h2><p>Adjust the search or filters.</p></div>';
+      list.querySelectorAll(".card[data-id]").forEach(function (card) {
         card.addEventListener("click", function () {
           selectIssue(card.getAttribute("data-id"));
         });
@@ -740,6 +774,10 @@
       const s = AppState.filters.source;
       return (
         '<div class="filters" aria-label="Queue filters">' +
+          '<label class="filter-group search-group">' +
+            '<input type="search" id="search-filter" placeholder="Search issues…" ' +
+              'value="' + escapeHtml(AppState.filters.text || "") + '" aria-label="Search issues" />' +
+          "</label>" +
           '<label class="filter-group">Priority ' +
             '<select id="priority-filter">' +
               selectOption("all", "All", p) +
@@ -766,19 +804,29 @@
     function bindFilters() {
       const priority = document.getElementById("priority-filter");
       const source = document.getElementById("source-filter");
+      const search = document.getElementById("search-filter");
       const clear = document.getElementById("clear-filters");
+      // Update only the list (not the filters bar) so controls keep focus/caret.
       priority.addEventListener("change", function () {
         AppState.filters.priority = priority.value;
-        renderQueue(AppState.issues);
+        updateQueueList();
       });
       source.addEventListener("change", function () {
         AppState.filters.source = source.value;
-        renderQueue(AppState.issues);
+        updateQueueList();
+      });
+      search.addEventListener("input", function () {
+        AppState.filters.text = search.value;
+        updateQueueList();
       });
       clear.addEventListener("click", function () {
         AppState.filters.priority = "all";
         AppState.filters.source = "all";
-        renderQueue(AppState.issues);
+        AppState.filters.text = "";
+        priority.value = "all";
+        source.value = "all";
+        search.value = "";
+        updateQueueList();
       });
     }
 
@@ -921,10 +969,13 @@
         '<section class="detail-section">' +
           '<h2>Proposed fix<span class="verified-pill">verified against real source</span></h2>' +
           '<div class="fix-card">' +
-            '<a class="code-citation" href="' + escapeHtml(safeUrl(fix.url)) + '" target="_blank" rel="noreferrer">' +
-              "🔗 " + cite +
-              '<span class="cite-hint">open in cli/cli ↗</span>' +
-            "</a>" +
+            '<div class="fix-head">' +
+              '<a class="code-citation" href="' + escapeHtml(safeUrl(fix.url)) + '" target="_blank" rel="noreferrer">' +
+                "🔗 " + cite +
+                '<span class="cite-hint">open in cli/cli ↗</span>' +
+              "</a>" +
+              '<button type="button" class="copy-fix" id="copy-fix">Copy diff</button>' +
+            "</div>" +
             '<pre class="diff">' + diffHtml + "</pre>" +
             (fix.rationale ? '<p class="fix-rationale">' + escapeHtml(fix.rationale) + "</p>" : "") +
           "</div>" +
@@ -1000,6 +1051,22 @@
       document.getElementById("investigate-issue").addEventListener("click", function () {
         startInvestigation(issue.id);
       });
+      const copyBtn = document.getElementById("copy-fix");
+      if (copyBtn) {
+        copyBtn.addEventListener("click", function () {
+          const fix = (AppState.investigations[issue.id] || {}).proposed_fix || {};
+          const diff = fix.diff || "";
+          if (!diff || !navigator.clipboard) return;
+          navigator.clipboard.writeText(diff).then(function () {
+            copyBtn.textContent = "Copied ✓";
+            copyBtn.classList.add("copied");
+            setTimeout(function () {
+              copyBtn.textContent = "Copy diff";
+              copyBtn.classList.remove("copied");
+            }, 1800);
+          }).catch(function () { /* clipboard blocked — no-op */ });
+        });
+      }
       document.querySelectorAll("[data-related-id]").forEach(function (button) {
         button.addEventListener("click", function () {
           selectIssue(button.getAttribute("data-related-id"));
