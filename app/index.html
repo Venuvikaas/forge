@@ -697,7 +697,7 @@
         return { mode: "mock", run_id: "mock-" + issue.id, hypothesis: mockHypothesisForIssue(issue), evidence: mockEvidenceForIssue(issue), proposed_fix: null };
       },
 
-      async _runInvestigateLive(issue, timeoutMs = 30000, pollMs = 3000) {
+      async _runInvestigateLive(issue, timeoutMs = 120000, pollMs = 3000) {
         const wf = this.client.workflows;
         const createRun = wf.createRun || wf.create_run;
         const submitForm = wf.submitForm || wf.submit_form;
@@ -709,7 +709,7 @@
         try { await submitForm.call(wf, runId, "intake", { issue_id: issue.id }); }
         catch (err) { await submitForm.call(wf, runId, { issue_id: issue.id }); }
         const deadline = Date.now() + timeoutMs;
-        const TERMINAL = { COMPLETED: 1, FAILED: 1, CANCELLED: 1, ERROR: 1 };
+        const TERMINAL = { COMPLETED: 1, FAILED: 1, CANCELLED: 1, ERROR: 1, STOPPED: 1 };
         while (runGet && Date.now() < deadline) {
           await new Promise(function (r) { setTimeout(r, pollMs); });
           let cur;
@@ -1060,7 +1060,7 @@
       if (investigation.status === "error") {
         return (
           '<div class="investigation-status error">' +
-            '<p class="status-title">Investigation blocked</p>' +
+            '<p class="status-title">Investigation unavailable</p>' +
             '<p class="detail-empty">' + escapeHtml(investigation.message || "Workflow run failed to start.") + "</p>" +
           "</div>"
         );
@@ -1608,7 +1608,7 @@
         } else {
           AppState.investigations[issueId] = {
             status: "error",
-            message: "The investigation didn't return a hypothesis — the workflow may be slow or temporarily unavailable. Any evidence gathered is shown below; press Investigate to try again.",
+            message: "The investigation did not return a hypothesis yet. The workflow may still be slow or temporarily unavailable. Any evidence gathered is shown below; press Investigate to try again.",
             evidence: (run && run.evidence) || [],
           };
         }
