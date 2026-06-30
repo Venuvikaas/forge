@@ -195,5 +195,7 @@ lemma apps deploy forge ./app/index.html --yes
 Built for the Gappy AI National Hackathon, powered by Lemma SDK.
 
 Sarvesh M
+Venuvikaas V
+Sibi Saran
 
 Forge is the product. Gappy AI is the organizer.
