@@ -454,6 +454,19 @@
       color: var(--accent-ink); background: var(--accent); border: var(--bw2) solid var(--edge);
       padding: 0 12px; cursor: pointer; white-space: nowrap;
     }
+    .close-issue-btn {
+      width: 100%; font: inherit; font-family: var(--mono); font-size: 11px; font-weight: 800;
+      letter-spacing: 0.06em; text-transform: uppercase; color: var(--crit-ink);
+      background: var(--crit); border: var(--bw2) solid var(--edge);
+      padding: 9px 10px; cursor: pointer; box-shadow: 3px 3px 0 var(--shadow);
+      transition: transform .12s, box-shadow .12s;
+    }
+    .close-issue-btn:hover { transform: translate(-1px,-1px); box-shadow: 4px 4px 0 var(--shadow); }
+    .close-issue-btn:active { transform: translate(2px,2px); box-shadow: 0 0 0 var(--shadow); }
+    .close-issue-btn[disabled] {
+      cursor: default; color: var(--add); background: transparent; border-color: var(--add);
+      box-shadow: none; transform: none;
+    }
 
     /* ---- Audit timeline ---- */
     .timeline { list-style: none; margin: 0; padding: 0; display: grid; position: relative; }
@@ -1367,6 +1380,12 @@
               ["new", "triaged", "investigating", "resolved"].map(stOpt).join("") +
             "</select>" +
           "</div>" +
+          '<div class="ov-row">' +
+            '<button type="button" class="close-issue-btn" id="close-issue-btn"' +
+              (st === "resolved" ? " disabled" : "") + ">" +
+              (st === "resolved" ? "Issue closed" : "Close solved issue") +
+            "</button>" +
+          "</div>" +
         "</div>"
       );
     }
@@ -1523,6 +1542,11 @@
       if (ovPriority) ovPriority.addEventListener("change", function () { overridePriority(issue.id, ovPriority.value); });
       const ovStatus = document.getElementById("ov-status");
       if (ovStatus) ovStatus.addEventListener("change", function () { overrideStatus(issue.id, ovStatus.value); });
+      const closeIssue = document.getElementById("close-issue-btn");
+      if (closeIssue) closeIssue.addEventListener("click", function () {
+        AppState.menuOpen = false;
+        overrideStatus(issue.id, "resolved");
+      });
       const ovAssignInput = document.getElementById("ov-assignee");
       const ovAssignBtn = document.getElementById("ov-assign-btn");
       if (ovAssignInput && ovAssignBtn) {
